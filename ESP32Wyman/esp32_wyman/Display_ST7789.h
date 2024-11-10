@@ -1,7 +1,7 @@
 #pragma once
-#include <wyconfig.h>
+#include "wyconfig.h"
 
-#include <Display_ST7789.h>
+#include "Display_ST7789.h"
 #include <SPI.h>
 
 void LCD_Init(void);

@@ -1,5 +1,5 @@
 #pragma once
-#include <wyconfig.h>
+#include "wyconfig.h"
 
 #include <WiFi.h>
 #include <BLEDevice.h>

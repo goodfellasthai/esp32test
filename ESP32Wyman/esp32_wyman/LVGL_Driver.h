@@ -1,12 +1,12 @@
 #pragma once
-#include <wyconfig.h>
+#include "wyconfig.h"
 
 #include <lvgl.h>
-#include <lv_conf.h>
+//#include <lv_conf.h>
 //#include <demos/lv_demos.h>
-#include "../libraries/lvgl/demos/lv_demos.h"
+#include "C:\\Users\\paulr\\OneDrive\\Documents\\esp\\mainESPproject\\ESP32Wyman\\libraries\\lvgl\\demos\\lv_demos.h"
 //#include <esp_heap_caps.h>
-#include <Display_ST7789.h>
+#include "Display_ST7789.h"
 
 #define LVGL_WIDTH    (TFT_WIDTH)
 #define LVGL_HEIGHT   TFT_HEIGHT

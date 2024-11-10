@@ -1,7 +1,7 @@
 #pragma once
-#include <wyconfig.h>
+#include "wyconfig.h"
 
-#include <Display_ST7789.h> // Required as creates the SPI object for SD CS Chip select
+#include "Display_ST7789.h" // Required as creates the SPI object for SD CS Chip select
 #include <SD.h>
 //include <FS.h>
 //#include <cstring>

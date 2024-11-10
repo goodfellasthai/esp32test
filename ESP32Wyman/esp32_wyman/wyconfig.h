@@ -24,10 +24,11 @@
   #endif
 
   //// BOARD FEATURES
-  #if defined(MARAUDER_M5STICKCP2)
+  #if defined(WYMAN_M5STICKCP2)
     #define HAS_PWR_MGMT
     #define HAS_BUTTONS
     #define HAS_SCREEN
+    #define HAS_SD
   #elif defined(WYMAN_ESP32C6147)
     #define HAS_BUTTONS
     #define HAS_SCREEN
@@ -36,7 +37,7 @@
 
   //// POWER MANAGEMENT
   #ifdef HAS_PWR_MGMT
-    #if MARAUDER_M5STICKCP2
+    #if defined(WYMAN_M5STICKCP2)
       #include "AXP192.h"
       //// Prevent StickCP2 from turning off when disconnect USB cable
       #define POWER_HOLD_PIN 4
@@ -58,7 +59,7 @@
 
   //// DISPLAY DEFINITIONS
   #ifdef HAS_SCREEN
-    #if defined(MARAUDER_M5STICKCP2)
+    #if defined(WYMAN_M5STICKCP2)
       #define LARGESPIFFS
       #define TFT_MISO -1  // Master in only required for touch or input i.e. SD
       #define TFT_MOSI 15 // Master out only required not touch
@@ -73,7 +74,11 @@
       #define TFT_SPI_FREQUENCY  40000000
       #define TFT_PWM_FREQUENCY 1000
       #define TFT_PWM_RESOLUTION 10
-    #elif defined(WYMAN_ESP32C6147)
+      #define TFT_HORIZONTAL 1
+      #define TFT_VERTICAL 0
+      #define TFT_OFFSET_X 34
+      #define TFT_OFFSET_Y 0    
+     #elif defined(WYMAN_ESP32C6147)
       #define TFT_MISO -1  // Master in only required for touch or input i.e. SD
       #define TFT_MOSI 6 // Master out only required not touch
       #define TFT_SCLK 7
@@ -97,7 +102,9 @@
   //// SD DEFINITIONS
   #ifdef HAS_SD
     #if defined(WYMAN_M5STICKCP2)
-      #define SD_CS -1
+      #define LARGESPIFFS // Defines the device has having large SPIFFS to check if no SD card present
+      #define SD_MISO -1 // Assume no grove SD
+      #define SD_CS -1  // Assume no grove SD
     #elif defined(WYMAN_ESP32C6147)
       #define SD_CS 4    
       #define SD_MISO 5  // Master in only required for touch or input i.e. SD
