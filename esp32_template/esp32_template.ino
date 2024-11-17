@@ -1,4 +1,5 @@
 #pragma once
+// Main configuration file only required once and covered by pragma once
 #include "wyconfig.h"
 
 void setup() {

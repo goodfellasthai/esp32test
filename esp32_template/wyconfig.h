@@ -1,6 +1,6 @@
 #pragma once
 #ifndef wyconfig_h
-
+// Called by all module headers
   #define wyconfig_h
 
   #define ENGLISH_POTATO
@@ -11,9 +11,9 @@
   //#define WYMAN_ESP32C6147
   //#define WYMAN_M5STICKCP2
 
-  //// GLOBALINCLUDES BASED ON BOARD
+  //// GLOBAL INCLUDES BASED ON BOARD ALWAYS INCLUDE ARDUINO FOR INO SERIAL OR OTHER FUNCS
   #include <Arduino.h>
-  #include "wy_ic2scan.h" // Not board target dependant so can add here to test global code
+  #include "wy_ic2scan.h" // Not board target dependant so can add or repeat here to test global modules
   #if defined(WYMAN_LORAV2)
     #include "wy_v2_factory.h"
   #elif defined(WYMAN_LORAV3)

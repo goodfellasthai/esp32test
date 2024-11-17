@@ -1,35 +1,26 @@
  #include "wy_v2_factory.h"
  #if defined(WYMAN_LORAV2)
-
 /*
- * HelTec Automation(TM) WIFI_LoRa_32 factory test code, witch includ
+ * HelTec Automation(TM) WIFI_LoRa_32 factory test code, witch includes
  * follow functions:
- * 
  * - Basic OLED function test;
- * 
  * - Basic serial port test(in baud rate 115200);
- * 
  * - LED blink test;
- * 
  * - WIFI connect and scan test;
- * 
  * - LoRa Ping-Pong test (DIO0 -- GPIO26 interrup check the new incoming messages);
- * 
  * - Timer test and some other Arduino basic functions.
- *
- * by Aaron.Lee from HelTec AutoMation, ChengDu, China
- * 成都惠利特自动化科技有限公司
- * https://heltec.org
- *
- * this project also realess in GitHub:
  * https://github.com/HelTecAutomation/Heltec_ESP32
 */
 #pragma once
-#include "Arduino.h" //Arduino always in the header so board code can be compiled
-#include "WiFi.h"
-#include "LoRaWan_APP.h"
+// All libraries to be searched in the path in triangular quotes libraries in same directory double quotes
+// libraries required to compile the .cpp should be included in the cpp only headers in the same directory to be included in the .h module file
+// can't put the main .cpp reliant libraries in .h as would conflict wutg libraries using the same functions with header called first which is required
+// so the appication knows the functions it can call
 #include <Wire.h>  
-#include "HT_SSD1306Wire.h"
+#include <WiFi.h>
+#include <LoRaWan_APP.h>
+#include <HT_SSD1306Wire.h>
+
 /********************************* lora  *********************************************/
 #define RF_FREQUENCY                                868000000 // Hz
 
