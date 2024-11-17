@@ -1,3 +1,4 @@
+#pragma once
 #include "wyconfig.h"
 
 void setup() {
@@ -6,14 +7,24 @@ void setup() {
   while (!Serial);
   Serial.println("Serial Initialized for " + String(HARDWARE_NAME));
   
+  // Test unimportant procedure for project structure verification
+  ic2scan();
+
 }
 
 void loop() {
   #if defined(WYMAN_LORAV2)
-    // Placeholder    
+    // Placeholder
+
+  #elif defined(WYMAN_LORAV3)
+    // Placeholder
+
+  #elif defined(WYMAN_M5STICKCP2)
+    // Placeholder
+
+  #elif defined(WYMAN_ESP32C6147)
+    // Placeholder
+
   #endif
 
-  #if defined(WYMAN_LORAV2)
-    // Placeholder    
-  #endif
 }

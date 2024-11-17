@@ -7,6 +7,7 @@
 
   //// GLOBAL INCLUDES
   #include <Arduino.h>
+  #include "wy_ic2scan.h"
 
   //// BOARD TARGETS (COMMENT OUT AS NEEDED)
   #define WYMAN_LORAV2
