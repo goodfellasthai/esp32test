@@ -1,10 +1,20 @@
-#pragma once
+ #include "wy_generic.h"
+ #if defined(WYMAN_LORA_GENERIC)
+ #pragma once
 // All libraries to be searched in the path in triangular quotes libraries in same directory double quotes
 // libraries required to compile the .cpp should be included in the cpp only headers in the same directory to be included in the .h module file
 // can't put the main .cpp reliant libraries in .h as would conflict with other libraries using the same functions
 // the .h always needs called first in the .cpp module file so that the application knows the functions it can use for the board
-#include "wyconfig.h"
-#include "wy_v3_simple_images.h"
+#include "wy_generic.h"
 
-void wy_v3_simple_setup();
-void wy_v3_simple_loop();
+void wy_generic_setup() {
+  // put your setup code here, to run once:
+
+}
+
+void wy_generic_loop() {
+  // put your main code here, to run repeatedly:
+
+}
+
+#endif

@@ -6,10 +6,11 @@
   #define ENGLISH_POTATO
 
   //// BOARD TARGETS (COMMENT OUT AS NEEDED)
-  #define WYMAN_LORAV2
+  //#define WYMAN_LORAV2
   //#define WYMAN_LORAV3
-  //#define WYMAN_ESP32C6147
+  #define WYMAN_LORA_GENERIC // Should only require a board change to rebuild no configuration
   //#define WYMAN_M5STICKCP2
+  //#define WYMAN_ESP32C6147
 
   //// GLOBAL INCLUDES BASED ON BOARD ALWAYS INCLUDE ARDUINO FOR INO SERIAL OR OTHER FUNCS
   #include <Arduino.h>
@@ -18,6 +19,12 @@
     #include "wy_v2_factory.h"
   #elif defined(WYMAN_LORAV3)
     #include "wy_v3_simple.h"
+  #elif defined(WYMAN_LORA_GENERIC)
+    #include "wy_generic.h"
+  #elif defined(WYMAN_M5STICKCP2)
+    #include "wy_cp2.h"
+  #elif defined(WYMAN_ESP32C6147)
+    // Placeholder
   #endif
 
   //// GLOBAL DECLARATIONS
@@ -28,6 +35,8 @@
     #define HARDWARE_NAME "LoRa ESP32 V2 0.96 OLED 64x128"
   #elif defined(WYMAN_LORAV3)
     #define HARDWARE_NAME "LoRa ESP32 V3 0.96 OLED 64x128"
+  #elif defined(WYMAN_LORA_GENERIC)
+    #define HARDWARE_NAME "LoRa ESP32 Generic V2/V3"
   #elif defined(WYMAN_M5STICKCP2)
     #define HARDWARE_NAME "M5StickC Plus2 1.14 TFT 135x240"  
   #elif defined(WYMAN_ESP32C6147)
@@ -39,6 +48,9 @@
     // Placeholder
 
   #elif defined(WYMAN_LORAV3)
+    // Placeholder
+
+  #elif defined(WYMAN_LORA_GENERIC)
     // Placeholder
 
   #elif defined(WYMAN_M5STICKCP2)

@@ -20,8 +20,13 @@ void setup() {
     // Placeholder
     wy_v3_simple_setup();
 
+  #elif defined(WYMAN_LORA_GENERIC)
+    // Placeholder
+    wy_generic_setup();
+
   #elif defined(WYMAN_M5STICKCP2)
     // Placeholder
+    wy_cp2_setup();
 
   #elif defined(WYMAN_ESP32C6147)
     // Placeholder
@@ -32,15 +37,17 @@ void setup() {
 
 void loop() {
   #if defined(WYMAN_LORAV2)
-    // Placeholder
     wy_v2_factory_loop();
 
   #elif defined(WYMAN_LORAV3)
-    // Placeholder
     wy_v3_simple_loop();
 
-  #elif defined(WYMAN_M5STICKCP2)
+  #elif defined(WYMAN_LORA_GENERIC)
     // Placeholder
+    wy_generic_loop();
+
+  #elif defined(WYMAN_M5STICKCP2)
+    wy_cp2_loop();
 
   #elif defined(WYMAN_ESP32C6147)
     // Placeholder
