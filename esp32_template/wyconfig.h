@@ -45,13 +45,13 @@
 
   //// DEVICE DEFINITIONS
   #if defined(WYMAN_LORAV2)
-    // Placeholder
+    #define BUTTON_PIN 0
 
   #elif defined(WYMAN_LORAV3)
-    // Placeholder
+    #define BUTTON_PIN 0
 
   #elif defined(WYMAN_LORA_GENERIC)
-    // Placeholder
+    #define BUTTON_PIN 0
 
   #elif defined(WYMAN_M5STICKCP2)
     // Placeholder
