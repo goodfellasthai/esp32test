@@ -46,12 +46,15 @@
   //// DEVICE DEFINITIONS
   #if defined(WYMAN_LORAV2)
     #define BUTTON_PIN 0
+    #define BATTERY_PIN 37
 
   #elif defined(WYMAN_LORAV3)
     #define BUTTON_PIN 0
+    #define BATTERY_PIN 37
 
   #elif defined(WYMAN_LORA_GENERIC)
     #define BUTTON_PIN 0
+    #define BATTERY_PIN 37
 
   #elif defined(WYMAN_M5STICKCP2)
     // Placeholder
