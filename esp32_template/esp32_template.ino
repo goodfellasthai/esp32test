@@ -23,6 +23,10 @@ void setup() {
   #elif defined(WYMAN_LORA_GENERIC)
     // Placeholder
     wy_generic_setup();
+    #if defined(WYMAN_LORA_GENERIC) && defined(WY_NODE_MASTER)
+      //Serial.println("BEFORE NODE MASTER SETUP");
+      wy_node_master_setup();
+    #endif
 
   #elif defined(WYMAN_M5STICKCP2)
     // Placeholder
@@ -43,8 +47,10 @@ void loop() {
     wy_v3_simple_loop();
 
   #elif defined(WYMAN_LORA_GENERIC)
-    // Placeholder
     wy_generic_loop();
+    #if defined(WYMAN_LORA_GENERIC) && defined(WY_NODE_MASTER)
+      wy_node_master_loop(); 
+    #endif
 
   #elif defined(WYMAN_M5STICKCP2)
     wy_cp2_loop();

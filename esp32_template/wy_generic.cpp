@@ -149,7 +149,8 @@ void wy_generic_setup() {
     logo();
     delay(5000);
 
-    // Reset activity timer
+    // Update display and reset activity timer
+    updateDisplay();
     lastActivityTime = millis();
 }
 

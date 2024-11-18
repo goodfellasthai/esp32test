@@ -12,6 +12,11 @@
   //#define WYMAN_M5STICKCP2
   //#define WYMAN_ESP32C6147
 
+  //// LORA NODE PURPOSE (COMMENT OUT AS NEEDED)
+  #define WY_NODE_MASTER
+  //#define WY_NODE_DRONE
+  //#define WY_NODE_01
+
   //// GLOBAL INCLUDES BASED ON BOARD ALWAYS INCLUDE ARDUINO FOR INO SERIAL OR OTHER FUNCS
   #include <Arduino.h>
   #include "wy_ic2scan.h" // Not board target dependant so can add or repeat here to test global modules
@@ -21,10 +26,17 @@
     #include "wy_v3_simple.h"
   #elif defined(WYMAN_LORA_GENERIC)
     #include "wy_generic.h"
+    #if defined(WYMAN_LORA_GENERIC) && defined(WY_NODE_MASTER)
+      #include "wy_node_master.h"
+    #elif defined(WYMAN_LORA_GENERIC) && defined(WY_NODE_DRONE)
+      #include "wy_node_drone.h"
+    #elif defined(WYMAN_LORA_GENERIC) && defined(WY_NODE_01)
+      #include "wy_node_01.h"
+    #endif
   #elif defined(WYMAN_M5STICKCP2)
     #include "wy_cp2.h"
   #elif defined(WYMAN_ESP32C6147)
-    // Placeholder
+    // Placeholder   
   #endif
 
   //// GLOBAL DECLARATIONS
