@@ -87,7 +87,7 @@ void wy_node_master_loop() {
 
   // Send periodic status updates
   static unsigned long lastStatusUpdate = 0;
-  if (millis() - lastStatusUpdate > 5000) { // Every 5 seconds ping the master nodes status
+  if (millis() - lastStatusUpdate > 5000) { // Every 5 seconds ping the current nodes status
     lastStatusUpdate = millis();
     String statusUpdate = NODE_NAME + ": Status OK";
     LoRa.beginPacket();
