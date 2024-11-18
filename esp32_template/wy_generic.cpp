@@ -25,7 +25,8 @@ void updateDisplay(); // Updates the display dynamically
 
 void logo() {
     generic_display.clear();
-    generic_display.drawXbm(0, 5, logo_width, logo_height, (const unsigned char *)logo_bits);
+    //generic_display.drawXbm(0, 5, logo_width, logo_height, (const unsigned char *)logo_bits);
+    generic_display.drawXbm(0, 5, wy_width, wy_height, (const unsigned char *)wy_bits);
     generic_display.display();
 }
 
