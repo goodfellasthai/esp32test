@@ -1,6 +1,6 @@
-#include "wy_v2_node_master.h"
+#include "wy_v3_node_master.h"
 
-#if defined(WYMAN_LORAV2)
+#if defined(WYMAN_LORAV3)
 
 #pragma once
 
@@ -25,7 +25,7 @@
   #error "Please define WYMAN_LORAV2 or WYMAN_LORAV3 to match your board version."
 #endif
 
-void wy_v2_node_master_setup() {
+void wy_v3_node_master_setup() {
   Serial.begin(115200);
   while (!Serial);
 
@@ -38,7 +38,7 @@ void wy_v2_node_master_setup() {
   Serial.println("LoRa Initialization Successful");
 }
 
-void wy_v2_node_master_loop() {
+void wy_v3_node_master_loop() {
   static uint8_t txNumber = 0;
   static bool awaitingResponse = false;
   static unsigned long lastSendTime = 0;
@@ -82,4 +82,4 @@ void wy_v2_node_master_loop() {
   }
 }
 
-#endif // defined(WYMAN_LORAV2)
+#endif // defined(WYMAN_LORAV3)

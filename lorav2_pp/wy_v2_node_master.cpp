@@ -11,19 +11,9 @@
 #define RF_FREQUENCY 920E6 // 920 MHz
 
 // Define board-specific pins
-#if defined(WYMAN_LORAV2)
-  // Heltec V2 pin configuration
-  #define LORA_SS    18
-  #define LORA_RST   14
-  #define LORA_DIO0  26
-#elif defined(WYMAN_LORAV3)
-  // Heltec V3 pin configuration
-  #define LORA_SS    8
-  #define LORA_RST   12
-  #define LORA_DIO0  9
-#else
-  #error "Please define WYMAN_LORAV2 or WYMAN_LORAV3 to match your board version."
-#endif
+#define LORA_SS    18
+#define LORA_RST   14
+#define LORA_DIO0  26
 
 void wy_v2_node_master_setup() {
   Serial.begin(115200);
