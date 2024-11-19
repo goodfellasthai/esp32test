@@ -4,72 +4,106 @@
 
 #pragma once
 
-#include <SPI.h>
+#include <SPI.h>              // include libraries
 #include <LoRa.h>
 
-// Define frequency for Thailand
-#define RF_FREQUENCY 920E6 // 920 MHz
+/*
+const int csPin = 7;          // LoRa radio chip select
+const int resetPin = 6;       // LoRa radio reset
+const int irqPin = 1;         // change for your board; must be a hardware interrupt pin
+*/
 
 // Define board-specific pins
-#define LORA_SS    18
-#define LORA_RST   14
-#define LORA_DIO0  26
+#define csPin       18    // GPIO18 - LoRa radio chip select
+#define resetPin    14    // GPIO14 - LoRa radio reset
+#define irqPin      26    // GPIO26 - LoRa radio interrupt
+
+String outgoing;              // outgoing message
+
+byte msgCount = 0;            // count of outgoing messages
+byte localAddress = 0xBB;     // address of base station
+//byte localAddress = 0xDD;     // address of drone device
+//byte localAddress = 0xCC;     // address of node device
+byte destination = 0xFF;      // destination to send to FF is broadcast to everyone or can specify specific address
+long lastSendTime = 0;        // last send time
+int interval = 2000;          // interval between sends
 
 void wy_v2_node_master_setup() {
-  Serial.begin(115200);
-  while (!Serial);
+  //Serial.begin(115200);                   // initialize serial dont do already done
+  //while (!Serial);
 
-  // Initialize LoRa module
-  LoRa.setPins(LORA_SS, LORA_RST, LORA_DIO0);
-  if (!LoRa.begin(RF_FREQUENCY)) {
-    Serial.println("Starting LoRa failed!");
-    while (1);
+  Serial.println("LoRa Duplex");
+
+  // override the default CS, reset, and IRQ pins (optional)
+  LoRa.setPins(csPin, resetPin, irqPin);  // set CS, reset, IRQ pin
+
+  if (!LoRa.begin(915E6)) {               // initialize ratio at 915 MHz
+    Serial.println("LoRa init failed. Check your connections.");
+    while (true);                         // if failed, do nothing
   }
-  Serial.println("LoRa Initialization Successful");
+
+  Serial.println("LoRa init succeeded.");
 }
 
 void wy_v2_node_master_loop() {
-  static uint8_t txNumber = 0;
-  static bool awaitingResponse = false;
-  static unsigned long lastSendTime = 0;
-  const unsigned long interval = 2000; // 2 seconds
-
-  if (!awaitingResponse && millis() - lastSendTime > interval) {
-    // Send "Ping" message
-    txNumber++;
-    String message = "Ping " + String(txNumber);
-    LoRa.beginPacket();
-    LoRa.print(message);
-    LoRa.endPacket();
-    Serial.print("Sent: ");
-    Serial.println(message);
-    awaitingResponse = true;
-    lastSendTime = millis();
+  if (millis() - lastSendTime > interval) {
+    String message = "HeLoRa World!";   // send a message
+    sendMessage(message);
+    Serial.println("Sending " + message);
+    lastSendTime = millis();            // timestamp the message
+    interval = random(2000) + 1000;     // 2-3 seconds
   }
 
-  // Check for incoming messages
-  int packetSize = LoRa.parsePacket();
-  if (packetSize) {
-    String received = "";
-    while (LoRa.available()) {
-      received += (char)LoRa.read();
-    }
-    Serial.print("Received: ");
-    Serial.println(received);
+  // parse for a packet, and call onReceive with the result:
+  onReceive(LoRa.parsePacket());
+}
 
-    if (received.startsWith("Pong")) {
-      // Received a Pong response
-      awaitingResponse = false;
-    } else if (received.startsWith("Ping")) {
-      // Received a Ping, send Pong response
-      String response = "Pong " + received.substring(5);
-      LoRa.beginPacket();
-      LoRa.print(response);
-      LoRa.endPacket();
-      Serial.print("Sent: ");
-      Serial.println(response);
-    }
+void sendMessage(String outgoing) {
+  LoRa.beginPacket();                   // start packet
+  LoRa.write(destination);              // add destination address
+  LoRa.write(localAddress);             // add sender address
+  LoRa.write(msgCount);                 // add message ID
+  LoRa.write(outgoing.length());        // add payload length
+  LoRa.print(outgoing);                 // add payload
+  LoRa.endPacket();                     // finish packet and send it
+  msgCount++;                           // increment message ID
+}
+
+void onReceive(int packetSize) {
+  if (packetSize == 0) return;          // if there's no packet, return
+
+  // read packet header bytes:
+  int recipient = LoRa.read();          // recipient address
+  byte sender = LoRa.read();            // sender address
+  byte incomingMsgId = LoRa.read();     // incoming msg ID
+  byte incomingLength = LoRa.read();    // incoming msg length
+
+  String incoming = "";
+
+  while (LoRa.available()) {
+    incoming += (char)LoRa.read();
   }
+
+  if (incomingLength != incoming.length()) {   // check length for error
+    Serial.println("error: message length does not match length");
+    return;                             // skip rest of function
+  }
+
+  // if the recipient isn't this device or broadcast,
+  if (recipient != localAddress && recipient != 0xFF) {
+    Serial.println("This message is not for me.");
+    return;                             // skip rest of function
+  }
+
+  // if message is for this device, or broadcast, print details:
+  Serial.println("Received from: 0x" + String(sender, HEX));
+  Serial.println("Sent to: 0x" + String(recipient, HEX));
+  Serial.println("Message ID: " + String(incomingMsgId));
+  Serial.println("Message length: " + String(incomingLength));
+  Serial.println("Message: " + incoming);
+  Serial.println("RSSI: " + String(LoRa.packetRssi()));
+  Serial.println("Snr: " + String(LoRa.packetSnr()));
+  Serial.println();
 }
 
 #endif // defined(WYMAN_LORAV2)

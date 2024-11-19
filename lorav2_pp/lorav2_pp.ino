@@ -8,9 +8,6 @@ void setup() {
   while (!Serial);
   Serial.println();
   Serial.print("Serial Initialized for " + String(HARDWARE_NAME));
-  
-  // Test unimportant procedure for project structure verification
-  ic2scan();
 
   #if defined(WYMAN_LORAV2)
     #if defined(WY_NODE_MASTER)
@@ -19,8 +16,6 @@ void setup() {
        wy_v2_node_drone_setup();
     #elif defined(WY_NODE_01)
        wy_v2_node_01_setup();
-    #else
-       wy_generic_setup();
     #endif
   #elif defined(WYMAN_LORAV3)
     #if defined(WY_NODE_MASTER)
@@ -29,8 +24,6 @@ void setup() {
        wy_v3_node_drone_setup();
     #elif defined(WY_NODE_01)
        wy_v3_node_01_setup();
-    #else
-       wy_generic_setup();
     #endif
   #elif defined(WYMAN_M5STICKCP2)
     wy_cp2_setup();
@@ -48,8 +41,6 @@ void loop() {
        wy_v2_node_drone_loop();
     #elif defined(WY_NODE_01)
        wy_v2_node_01_loop();
-    #else
-      wy_generic_loop();    
     #endif
   #elif defined(WYMAN_LORAV3)
     #if defined(WY_NODE_MASTER)
@@ -57,9 +48,7 @@ void loop() {
     #elif defined(WY_NODE_DRONE)
        wy_v3_node_drone_loop();
     #elif defined(WY_NODE_01)
-       wy_v3_node_01_loop();
-    #else
-      wy_generic_loop();    
+       wy_v3_node_01_loop(); 
     #endif
   #elif defined(WYMAN_M5STICKCP2)
     wy_cp2_loop();

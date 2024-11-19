@@ -7,3 +7,6 @@
 
 void wy_v2_node_master_setup();
 void wy_v2_node_master_loop();
+
+void sendMessage(String outgoing);
+void onReceive(int packetSize);
