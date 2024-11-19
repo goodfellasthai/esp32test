@@ -5,5 +5,5 @@
 // the .h always needs called first in the .cpp module file so that the application knows the functions it can use for the board
 #include "wyconfig.h"
 
-void wy_node_master_setup();
-void wy_node_master_loop();
+void wy_v2_node_master_setup();
+void wy_v2_node_master_loop();

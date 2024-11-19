@@ -1,6 +1,5 @@
-#include "wy_generic.h"
-#if defined(WYMAN_LORA_GENERIC)
 #pragma once
+#include "wy_generic.h"
 #include <HT_SSD1306Wire.h>
 
 // Initialize the display
@@ -178,5 +177,3 @@ void wy_generic_loop() {
     // LoRa and Wi-Fi functionalities will continue to work here
     // Insert LoRa/Wi-Fi-related code below
 }
-
-#endif

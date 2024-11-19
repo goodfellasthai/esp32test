@@ -6,14 +6,13 @@
   #define ENGLISH_POTATO
 
   //// BOARD TARGETS (COMMENT OUT AS NEEDED)
-  //#define WYMAN_LORAV2
+  #define WYMAN_LORAV2
   //#define WYMAN_LORAV3
-  #define WYMAN_LORA_GENERIC // Should only require a board change to rebuild no configuration
   //#define WYMAN_M5STICKCP2
   //#define WYMAN_ESP32C6147
 
   //// LORA NODE PURPOSE (COMMENT OUT AS NEEDED)
-  #define WY_NODE_MASTER
+  //#define WY_NODE_MASTER
   //#define WY_NODE_DRONE
   //#define WY_NODE_01
 
@@ -21,22 +20,33 @@
   #include <Arduino.h>
   #include "wy_ic2scan.h" // Not board target dependant so can add or repeat here to test global modules
   #if defined(WYMAN_LORAV2)
-    #include "wy_v2_factory.h"
+    #if defined(WY_NODE_MASTER)
+       #include "wy_v2_node_master.h"
+    #elif defined(WY_NODE_DRONE)
+       #include "wy_v2_node_drone.h"
+    #elif defined(WY_NODE_01)
+       #include "wy_v2_node_01.h"
+    #else
+      #include "wy_generic.h"
+      #define BUTTON_PIN 0
+      #define BATTERY_PIN 37
+    #endif
   #elif defined(WYMAN_LORAV3)
-    #include "wy_v3_simple.h"
-  #elif defined(WYMAN_LORA_GENERIC)
-    #include "wy_generic.h"
-    #if defined(WYMAN_LORA_GENERIC) && defined(WY_NODE_MASTER)
-      #include "wy_node_master.h"
-    #elif defined(WYMAN_LORA_GENERIC) && defined(WY_NODE_DRONE)
-      #include "wy_node_drone.h"
-    #elif defined(WYMAN_LORA_GENERIC) && defined(WY_NODE_01)
-      #include "wy_node_01.h"
+    #if defined(WY_NODE_MASTER)
+       #include "wy_v3_node_master.h"
+    #elif defined(WY_NODE_DRONE)
+       #include "wy_v3_node_drone.h"
+    #elif defined(WY_NODE_01)
+       #include "wy_v3_node_01.h"
+    #else
+      #include "wy_generic.h"
+      #define BUTTON_PIN 0
+      #define BATTERY_PIN 13
     #endif
   #elif defined(WYMAN_M5STICKCP2)
     #include "wy_cp2.h"
   #elif defined(WYMAN_ESP32C6147)
-    // Placeholder   
+    // Placeholder
   #endif
 
   //// GLOBAL DECLARATIONS
@@ -47,26 +57,20 @@
     #define HARDWARE_NAME "LoRa ESP32 V2 0.96 OLED 64x128"
   #elif defined(WYMAN_LORAV3)
     #define HARDWARE_NAME "LoRa ESP32 V3 0.96 OLED 64x128"
-  #elif defined(WYMAN_LORA_GENERIC)
-    #define HARDWARE_NAME "LoRa ESP32 Generic V2/V3"
   #elif defined(WYMAN_M5STICKCP2)
     #define HARDWARE_NAME "M5StickC Plus2 1.14 TFT 135x240"  
   #elif defined(WYMAN_ESP32C6147)
     #define HARDWARE_NAME "ESP32-C6FH4 1.47 TFT 172x320 SD"
+  #else
+    #define HARDWARE_NAME "Generic LoRa Device"
   #endif
 
   //// DEVICE DEFINITIONS
   #if defined(WYMAN_LORAV2)
-    #define BUTTON_PIN 0
-    #define BATTERY_PIN 37
+    // Placeholder
 
   #elif defined(WYMAN_LORAV3)
-    #define BUTTON_PIN 0
-    #define BATTERY_PIN 37
-
-  #elif defined(WYMAN_LORA_GENERIC)
-    #define BUTTON_PIN 0
-    #define BATTERY_PIN 37
+    // Placeholder
 
   #elif defined(WYMAN_M5STICKCP2)
     // Placeholder

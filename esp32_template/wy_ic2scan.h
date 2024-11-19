@@ -4,6 +4,5 @@
 // can't put the main .cpp reliant libraries in .h as would conflict with other libraries using the same functions
 // the .h always needs called first in the .cpp module file so that the application knows the functions it can use for the board
 #include "wyconfig.h"
-#include <Wire.h>
 
 void ic2scan();

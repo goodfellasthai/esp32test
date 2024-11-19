@@ -13,51 +13,58 @@ void setup() {
   ic2scan();
 
   #if defined(WYMAN_LORAV2)
-    // Placeholder
-    wy_v2_factory_setup();
-
-  #elif defined(WYMAN_LORAV3)
-    // Placeholder
-    wy_v3_simple_setup();
-
-  #elif defined(WYMAN_LORA_GENERIC)
-    // Placeholder
-    wy_generic_setup();
-    #if defined(WYMAN_LORA_GENERIC) && defined(WY_NODE_MASTER)
-      //Serial.println("BEFORE NODE MASTER SETUP");
-      wy_node_master_setup();
+    #if defined(WY_NODE_MASTER)
+       wy_v2_node_master_setup();   
+    #elif defined(WY_NODE_DRONE)
+       wy_v2_node_drone_setup();
+    #elif defined(WY_NODE_01)
+       wy_v2_node_01_setup();
+    #else
+       wy_generic_setup();
     #endif
-
+  #elif defined(WYMAN_LORAV3)
+    #if defined(WY_NODE_MASTER)
+       wy_v3_node_master_setup();
+    #elif defined(WY_NODE_DRONE)
+       wy_v3_node_drone_setup();
+    #elif defined(WY_NODE_01)
+       wy_v3_node_01_setup();
+    #else
+       wy_generic_setup();
+    #endif
   #elif defined(WYMAN_M5STICKCP2)
-    // Placeholder
     wy_cp2_setup();
-
   #elif defined(WYMAN_ESP32C6147)
     // Placeholder
-
   #endif
 
 }
 
 void loop() {
   #if defined(WYMAN_LORAV2)
-    wy_v2_factory_loop();
-
-  #elif defined(WYMAN_LORAV3)
-    wy_v3_simple_loop();
-
-  #elif defined(WYMAN_LORA_GENERIC)
-    wy_generic_loop();
-    #if defined(WYMAN_LORA_GENERIC) && defined(WY_NODE_MASTER)
-      wy_node_master_loop(); 
+    #if defined(WY_NODE_MASTER)
+       wy_v2_node_master_loop();   
+    #elif defined(WY_NODE_DRONE)
+       wy_v2_node_drone_loop();
+    #elif defined(WY_NODE_01)
+       wy_v2_node_01_loop();
+    #else
+      wy_generic_loop();    
     #endif
-
+  #elif defined(WYMAN_LORAV3)
+    #if defined(WY_NODE_MASTER)
+       wy_v3_node_master_loop();
+    #elif defined(WY_NODE_DRONE)
+       wy_v3_node_drone_loop();
+    #elif defined(WY_NODE_01)
+       wy_v3_node_01_loop();
+    #else
+      wy_generic_loop();    
+    #endif
   #elif defined(WYMAN_M5STICKCP2)
     wy_cp2_loop();
-
   #elif defined(WYMAN_ESP32C6147)
     // Placeholder
-
   #endif
 
 }
