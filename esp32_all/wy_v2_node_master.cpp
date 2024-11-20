@@ -26,7 +26,7 @@ byte localAddress = 0xBB;     // address of base station
 //byte localAddress = 0xCC;     // address of node device
 byte destination = 0xFF;      // destination to send to FF is broadcast to everyone or can specify specific address
 long lastSendTime = 0;        // last send time
-int interval = 2000;          // interval between sends
+int interval = 10000;          // interval between sends
 
 void wy_v2_node_master_setup() {
   //Serial.begin(115200);                   // initialize serial dont do already done

@@ -5,4 +5,6 @@
 // the .h always needs called first in the .cpp module file so that the application knows the functions it can use for the board
 #include "wyconfig.h"
 
-void ic2scan();
+void wy_v3_node_master_setup();
+void wy_v3_node_master_loop();
+void rx();

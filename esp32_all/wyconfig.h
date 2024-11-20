@@ -18,29 +18,24 @@
 
   //// GLOBAL INCLUDES BASED ON BOARD ALWAYS INCLUDE ARDUINO FOR INO SERIAL OR OTHER FUNCS
   #include <Arduino.h>
-  #include "wy_ic2scan.h" // Not board target dependant so can add or repeat here to test global modules
   #if defined(WYMAN_LORAV2)
     #if defined(WY_NODE_MASTER)
        #include "wy_v2_node_master.h"
     #elif defined(WY_NODE_DRONE)
-       #include "wy_v2_node_drone.h"
+       #include "lorav2/wy_v2_node_drone.h"
     #elif defined(WY_NODE_01)
-       #include "wy_v2_node_01.h"
-    #else
-      #include "wy_generic.h"
+       #include "lorav2/wy_v2_node_01.h"
     #endif
   #elif defined(WYMAN_LORAV3)
     #if defined(WY_NODE_MASTER)
        #include "wy_v3_node_master.h"
     #elif defined(WY_NODE_DRONE)
-       #include "wy_v3_node_drone.h"
+       #include "lorav3/wy_v3_node_drone.h"
     #elif defined(WY_NODE_01)
-       #include "wy_v3_node_01.h"
-    #else
-      #include "wy_generic.h"
+       #include "lorav3/wy_v3_node_01.h"
     #endif
   #elif defined(WYMAN_M5STICKCP2)
-    #include "wy_cp2.h"
+    #include "m5/wy_cp2.h"
   #elif defined(WYMAN_ESP32C6147)
     // Placeholder
   #endif
@@ -57,8 +52,6 @@
     #define HARDWARE_NAME "M5StickC Plus2 1.14 TFT 135x240"  
   #elif defined(WYMAN_ESP32C6147)
     #define HARDWARE_NAME "ESP32-C6FH4 1.47 TFT 172x320 SD"
-  #else
-    #define HARDWARE_NAME "Generic LoRa Device"
   #endif
 
   //// DEVICE DEFINITIONS

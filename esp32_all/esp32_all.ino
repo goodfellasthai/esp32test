@@ -7,7 +7,7 @@ void setup() {
   Serial.begin(115200);
   while (!Serial);
   Serial.println();
-  Serial.print("Serial Initialized for " + String(HARDWARE_NAME));
+  Serial.println("Serial Initialized for " + String(HARDWARE_NAME));
 
   #if defined(WYMAN_LORAV2)
     #if defined(WY_NODE_MASTER)
