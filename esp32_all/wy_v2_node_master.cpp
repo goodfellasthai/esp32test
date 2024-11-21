@@ -18,9 +18,10 @@
 // I2C address for the LoRaV2 OLED
 #define OLED_ADDRESS 0x3C // Replace with your OLED's I2C address
 // Pins for the OLED LoRaV2 I2C
-#define OLED_RESET 16 // Set to -1 if not used LoRaV2
+#define OLED_RESET 16 // LoRaV2
 #define OLED_SDA 4 // LoRaV2
 #define OLED_SCL 15 // LoRaV2
+
 // Create an SSD1306 object for I2C
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 String messageBuffer[MAX_LINES]; // Buffer to store lines
@@ -34,6 +35,7 @@ int currentLine = 0;             // Tracks the current line for scrolling
 // Define LoRaV2 parameters
 #define PAUSE               5           // Pause in seconds between transmits
 #define FREQUENCY           915.0       // Frequency in MHz
+//#define FREQUENCY           433.0       // Frequency in MHz v3 only
 #define BANDWIDTH           250.0       // Bandwidth in kHz
 #define SPREADING_FACTOR    9           // Spreading factor (5-12)
 #define TRANSMIT_POWER      0           // Transmit power in dBm
@@ -41,7 +43,7 @@ int currentLine = 0;             // Tracks the current line for scrolling
 String outgoing;              // outgoing message
 String monitormsg;            // use for message to monitor on serial or display
 
-byte msgCount = 0;            // count of outgoing messages
+int msgCount = 0;            // count of outgoing messages
 byte localAddress = 0xBB;     // address of base station
 //byte localAddress = 0xDD;     // address of drone device
 //byte localAddress = 0xCC;     // address of node device
