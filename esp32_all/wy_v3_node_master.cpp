@@ -54,17 +54,6 @@ void wy_v3_node_master_setup() {
   display.setFont(ArialMT_Plain_10);
   display.flipScreenVertically();
 
-  // Display test
-  display.clear();
-  display.drawString(0, 0,"Next string 1...");
-  display.drawString(0, 10,"Next string 2...");
-  display.drawString(0, 20,"Next string 3...");
-  display.drawString(0, 30,"Next string 4...");
-  display.drawString(0, 40,"Next string 5...");
-  display.drawString(0, 50,"Next string 6...");
-  display.display();
-  delay(2000); // 2 seconds for screen testing
-
   // Begin radio looks like that needs done before radio configuration
   RADIOLIB_OR_HALT(radio.begin());
   //both.println("Radio Init...");
@@ -84,19 +73,14 @@ void wy_v3_node_master_setup() {
   display.clear();
   debugMessage("Display initialised");
   debugMessage("LoRa initialised");
-  //display.drawString(0, 0, "FQ:" + String(FREQUENCY, 1) + "MHz BW:" + String(BANDWIDTH, 1) + "kHz");
-  //display.drawString(0, 10, "SF:" + String(SPREADING_FACTOR) + " TXP:" + String(TRANSMIT_POWER) + "dBm");
-  //display.drawString(0, 20, "Battery:" + String(batteryPercentage, 1) + "%");
-  debugMessage("FQ:" + String(FREQUENCY, 1) + "MHz BW:" + String(BANDWIDTH, 1) + "kHz");
-  debugMessage("SF:" + String(SPREADING_FACTOR) + " TXP:" + String(TRANSMIT_POWER) + "dBm");
+  debugMessage("Frequency:" + String(FREQUENCY, 1) + "MHz");
+  debugMessage("Bandwidth:" + String(BANDWIDTH, 1) + "kHz");
+  debugMessage("Spread:" + String(SPREADING_FACTOR) + " TXP:" + String(TRANSMIT_POWER) + "dBm");
   debugMessage("Battery:" + String(batteryPercentage, 1) + "%");
   currentLine = 0;  // Reset the screen for a refresh will delay for pause time on first loop before TX and display will refresh on current line reset
-  //display.display();
-  delay(5000); // 5 seconds for system status
 
   // Start receiving
   RADIOLIB_OR_HALT(radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF));
-  //display.clear(); // Probably not required as both will print to the next available line
 }
 
 void wy_v3_node_master_loop() {

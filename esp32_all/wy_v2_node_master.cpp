@@ -61,12 +61,10 @@ void wy_v2_node_master_setup() {
         Serial.println(F("SSD1306 allocation failed"));
         for (;;); // Loop forever if initialization fails
     }
-    // Clear the display buffer set the universal text information and display a confirmation
-    display.clearDisplay();
+    // Set the universal font information and start cursor point
     display.setTextSize(1);              // Set text size (1 = small, 2 = medium, etc.)
     display.setTextColor(SSD1306_WHITE); // Set text color to white
     display.setCursor(0, 0);             // Set cursor to top-left corner
-    debugMessage("Display initialised");
 
     // Setup LoRaV2
     LoRa.setSpreadingFactor(SPREADING_FACTOR); // Set spreading factor
@@ -79,12 +77,16 @@ void wy_v2_node_master_setup() {
       Serial.println("LoRa init failed. Check your connections.");
       while (true);                             // if failed, do nothing
     }
-    // Display configuration serial and OLED
+    // Compact display of settings and battery level
+    //float batteryPercentage = getBatteryPercentage();
+    float batteryPercentage = 66;
+    display.clearDisplay();
+    debugMessage("Display initialised");
     debugMessage("LoRa initialised");
-    debugMessage("Frequency: " + String(FREQUENCY) + " MHz");
-    debugMessage("Bandwidth: " + String(BANDWIDTH) + " kHz");
-    debugMessage("Spreading Factor: " + String(SPREADING_FACTOR) );
-    debugMessage("Transmit Pwr: " + String(TRANSMIT_POWER) + " dBm");
+    debugMessage("Frequency:" + String(FREQUENCY, 1) + "MHz");
+    debugMessage("Bandwidth:" + String(BANDWIDTH, 1) + "kHz");
+    debugMessage("Spread:" + String(SPREADING_FACTOR) + " TXP:" + String(TRANSMIT_POWER) + "dBm");
+    debugMessage("Battery:" + String(batteryPercentage, 1) + "%");
     currentLine = 0;  // Reset the screen for a refresh will delay for pause time on first loop before TX and display will refresh on current line reset
 }
 
