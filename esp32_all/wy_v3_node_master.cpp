@@ -7,6 +7,7 @@
 // Turns the 'PRG' button into the power button, long press is off 
 #define HELTEC_POWER_BUTTON   // must be before "#include <heltec_unofficial.h>"
 #include <heltec_unofficial.h>
+// LORA STUFF
 // Pause between transmited packets in seconds.
 // Set to zero to only transmit a packet when pressing the user button
 // Will not exceed 1% duty cycle, even if you set a lower value.
@@ -30,9 +31,17 @@
 // US: Up to 20-30 dBm, depending on specific frequency bands.
 #define TRANSMIT_POWER      0
 
-String rxdata;
+// OLED Stuff
+#define MAX_LINES 6      // Maximum number of lines visible on the display
+String messageBuffer[MAX_LINES]; // Buffer to store lines
+int currentLine = 0;             // Tracks the current line for scrolling
+
+// LoRa decalrations
+String rxdata;                // use for received data
+String monitormsg;            // use for message to monitor on serial or display
+
 volatile bool rxFlag = false;
-int counter = 0;
+int msgCount = 0;
 uint64_t last_tx = 0;
 uint64_t tx_time;
 //uint64_t minimum_pause = PAUSE (1000);
@@ -45,14 +54,7 @@ void wy_v3_node_master_setup() {
   display.setFont(ArialMT_Plain_10);
   display.flipScreenVertically();
 
- /* // Read and calculate battery percentage
-  float batteryPercentage = getBatteryPercentage();
-  // Display battery percentage on OLED
-  display.drawString(0, 0, "Booting...");
-  display.drawString(0, 12, "Battery: " + String(batteryPercentage, 1) + "%");
-  display.display();
-  delay(2000); // Pause for 2 seconds to display information
-    */
+  // Display test
   display.clear();
   display.drawString(0, 0,"Next string 1...");
   display.drawString(0, 10,"Next string 2...");
@@ -61,7 +63,7 @@ void wy_v3_node_master_setup() {
   display.drawString(0, 40,"Next string 5...");
   display.drawString(0, 50,"Next string 6...");
   display.display();
-  delay(5000); // 5 seconds for screen testing
+  delay(2000); // 2 seconds for screen testing
 
   // Begin radio looks like that needs done before radio configuration
   RADIOLIB_OR_HALT(radio.begin());
@@ -71,62 +73,54 @@ void wy_v3_node_master_setup() {
   radio.setDio1Action(rx);
 
   // Set radio parameters
-  /*both.printf("Frequency: %.2f MHz\n", FREQUENCY);
   RADIOLIB_OR_HALT(radio.setFrequency(FREQUENCY));
-  both.printf("Bandwidth: %.1f kHz\n", BANDWIDTH);
   RADIOLIB_OR_HALT(radio.setBandwidth(BANDWIDTH));
-  both.printf("Spreading Factor: %i\n", SPREADING_FACTOR);
   RADIOLIB_OR_HALT(radio.setSpreadingFactor(SPREADING_FACTOR));
-  both.printf("TX power: %i dBm\n", TRANSMIT_POWER);
-  RADIOLIB_OR_HALT(radio.setOutputPower(TRANSMIT_POWER));*/
+  RADIOLIB_OR_HALT(radio.setOutputPower(TRANSMIT_POWER));
 
-  // Compact debug display for radio parameters
+  // Compact display of settings and battery level
   //float batteryPercentage = getBatteryPercentage();
   float batteryPercentage = 66;
   display.clear();
-  //display.setFont(ArialMT_Plain_10);
-  // First row: Frequency and Bandwidth
-  display.drawString(0, 0, "FQ:" + String(FREQUENCY, 1) + "MHz BW:" + String(BANDWIDTH, 1) + "kHz");
-  // Second row: Spreading Factor and TX Power
-  display.drawString(0, 12, "SF:" + String(SPREADING_FACTOR) + " TXP:" + String(TRANSMIT_POWER) + "dBm");
-  // Third row: Battery percentage
-  display.drawString(0, 24, "Batt:" + String(batteryPercentage, 1) + "%");
-  // Send buffer to display
-  display.display();
-  delay(5000);
+  debugMessage("Display initialised");
+  debugMessage("LoRa initialised");
+  //display.drawString(0, 0, "FQ:" + String(FREQUENCY, 1) + "MHz BW:" + String(BANDWIDTH, 1) + "kHz");
+  //display.drawString(0, 10, "SF:" + String(SPREADING_FACTOR) + " TXP:" + String(TRANSMIT_POWER) + "dBm");
+  //display.drawString(0, 20, "Battery:" + String(batteryPercentage, 1) + "%");
+  debugMessage("FQ:" + String(FREQUENCY, 1) + "MHz BW:" + String(BANDWIDTH, 1) + "kHz");
+  debugMessage("SF:" + String(SPREADING_FACTOR) + " TXP:" + String(TRANSMIT_POWER) + "dBm");
+  debugMessage("Battery:" + String(batteryPercentage, 1) + "%");
+  currentLine = 0;  // Reset the screen for a refresh will delay for pause time on first loop before TX and display will refresh on current line reset
+  //display.display();
+  delay(5000); // 5 seconds for system status
 
   // Start receiving
   RADIOLIB_OR_HALT(radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF));
-  //display.clear();
+  //display.clear(); // Probably not required as both will print to the next available line
 }
 
 void wy_v3_node_master_loop() {
   heltec_loop();
   
-  //bool tx_legal = millis() > last_tx + minimum_pause;
-  // Transmit a packet every PAUSE seconds or when the button is pressed
-  //if ((PAUSE && tx_legal && millis() - last_tx > (PAUSE * 1000)) || button.isSingleClick()) {
   if ( (millis() - last_tx) > (PAUSE * 1000) )  {
-    // In case of button click, tell user to wait
-    //if (!tx_legal) {
-    //  both.printf("Legal limit, wait %i sec.\n", (int)((minimum_pause - (millis() - last_tx)) / 1000) + 1);
-    //  return;
-    //}
-    both.printf("TX [%s] ", String(counter).c_str());
+    //both.printf("TX [%s] ", String(msgCount).c_str());
     radio.clearDio1Action();
     heltec_led(50); // 50% brightness is plenty for this LED
     tx_time = millis();
-    RADIOLIB(radio.transmit(String(counter++).c_str()));
+    RADIOLIB(radio.transmit(String(msgCount++).c_str()));
     tx_time = millis() - tx_time;
     heltec_led(0);
+    // Construct monitormsg based on transmission result
     if (_radiolib_status == RADIOLIB_ERR_NONE) {
-      both.printf("OK (%i ms)\n", (int)tx_time);
+        //both.printf("OK (%d ms)\n", (int)tx_time);
+        monitormsg = "TX [" + String(msgCount) + "] OK (" + String((int)tx_time) + " ms)";
     } else {
-      both.printf("fail (%i)\n", _radiolib_status);
+        //both.printf("fail (%d)\n", _radiolib_status);
+        monitormsg = "TX [" + String(msgCount) + "] Fail (" + String(_radiolib_status) + ")";
     }
-    // Maximum 1% duty cycle
-    //minimum_pause = tx_time * 100;
+    debugMessage(monitormsg);
     last_tx = millis();
+
     radio.setDio1Action(rx);
     RADIOLIB_OR_HALT(radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF));
   }
@@ -147,6 +141,31 @@ void wy_v3_node_master_loop() {
 // Can't do Serial or display things here, takes too much time for the interrupt
 void rx() {
   rxFlag = true;
+}
+
+// Send debug to serial and display
+void debugMessage(String message) {
+    // Send to Serial first
+    Serial.println(message);
+    // Add new message to the buffer
+    if (currentLine < MAX_LINES) {
+        messageBuffer[currentLine] = message; // Add to the next available line
+        currentLine++;
+    } else {
+        // Shift all lines up by 1 (scroll effect)
+        for (int i = 1; i < MAX_LINES; i++) {
+            messageBuffer[i - 1] = messageBuffer[i];
+        }
+        messageBuffer[MAX_LINES - 1] = message; // Add the new message to the last line
+    }
+
+    // Render all lines to display
+    display.clear();
+    for (int i = 0; i < currentLine; i++) {
+        display.drawString(0, i * 10, messageBuffer[i]); // Adjust line spacing as needed this is fine for Arial 10 font
+        //display.println(messageBuffer[i]);
+    }
+    display.display();
 }
 
 
