@@ -115,14 +115,17 @@ void wy_v2_node_master_setup() {
     }
     // Compact display of settings and battery level
     //float batteryPercentage = getBatteryPercentage();
-    float batteryPercentage = 66;
+    // Display battery status
+    BatteryStatus status = getBatteryStatus();
+    String batteryText = String(status.percentage) + "%";
+    String voltageText = String(status.voltage, 2) + "V";
     display.clearDisplay();
-    debugMessage("Display initialised");
-    debugMessage("LoRa initialised");
+    debugMessage("Disp. Init.");
+    debugMessage("LoRa Init");
     debugMessage("Frequency:" + String(FREQUENCY, 1) + "MHz");
     debugMessage("Bandwidth:" + String(BANDWIDTH, 1) + "kHz");
     debugMessage("Spread:" + String(SPREADING_FACTOR) + " TXP:" + String(TRANSMIT_POWER) + "dBm");
-    debugMessage("Battery:" + String(batteryPercentage, 1) + "%");
+    debugMessage("Battery: " + String(batteryText) + "% " + String(voltageText) );
     currentLine = 0;  // Reset the screen for a refresh will delay for pause time on first loop before TX and display will refresh on current line reset
 }
 
@@ -135,11 +138,11 @@ void wy_v2_node_master_loop() {
         sendMessage(message);                           // Send the message
         tx_time = millis() - tx_time;  // Calculate duration
         // Send the monitor message to serial and display
-        monitormsg = "TX [" + String(msgCount) + "] OK (" + String(duration) + " ms)";
+        monitormsg = "TX[" + String(msgCount) + "]:OK:" + String((int)tx_time) + "ms";
         //Serial.println(monitormsg);   // Debug TX
         //display.println(monitormsg);  // Display TX dont use F as in setup that is fixed for flash this is dynamic could also use sprintf
-        debugMessage(monitormsg); // Send to serial and display
-        display.display();                        // Send buffer to the display, required for OLED
+        ////debugMessage(monitormsg); // Send to serial and display
+        /////display.display();                        // Send buffer to the display, required for OLED
         lastSendTime = millis();                  // Update the last send time
         //interval = random(2000) + 1000;         // Set a random interval between 2-3 seconds
     }
@@ -150,18 +153,75 @@ void wy_v2_node_master_loop() {
 }
 
 void sendMessage(String outgoing) {
-    LoRa.beginPacket();                   // start packet
+    /*LoRa.beginPacket();                   // start packet
     LoRa.write(destination);              // add destination address
     LoRa.write(localAddress);             // add sender address
     LoRa.write(msgCount);                 // add message ID
     LoRa.write(outgoing.length());        // add payload length
     LoRa.print(outgoing);                 // add payload
     LoRa.endPacket();                     // finish packet and send it
-    msgCount++;                           // increment message ID
+    msgCount++;                           // increment message ID */
+
+    uint8_t len = outgoing.length();
+    BatteryStatus batteryStatus = getBatteryStatus(); // Get battery status (percentage and voltage)
+    uint8_t batteryLevel = batteryStatus.percentage;  // Extract battery percentage
+    uint16_t voltage = (uint16_t)(batteryStatus.voltage * 100); // Scale voltage to an integer (e.g., 4.12V -> 412)
+
+    uint8_t payload[len + 7]; // Allocate space for header + battery level + voltage + payload
+
+    // Prepare the header
+    payload[0] = destination;  // Destination address
+    payload[1] = localAddress; // Sender address
+    payload[2] = msgCount;     // Message ID
+    payload[3] = len;          // Payload length
+    payload[4] = batteryLevel; // Battery level
+    payload[5] = voltage >> 8; // High byte of voltage
+    payload[6] = voltage & 0xFF; // Low byte of voltage
+
+    // Add the payload data (the message string)
+    outgoing.getBytes(payload + 7, len + 1); // Convert String to binary array starting from payload[7]
+
+    // Start transmission
+    msgCount++;
+    tx_time = millis();
+    // V2: int16_t status = radio.transmit(payload, len + 7); // Transmit header + battery data + payload
+    // Begin LoRa packet
+    LoRa.beginPacket();
+    // Write payload to the LoRa packet
+    for (uint8_t i = 0; i < len + 7; i++) {
+        LoRa.write(payload[i]);
+    }
+    // End packet and transmit
+    bool result = LoRa.endPacket();
+    tx_time = millis() - tx_time;
+    
+    // Debug output
+    // V3: if (_radiolib_status == RADIOLIB_ERR_NONE) {
+    if (result) {
+        Serial.println("Payload Debug:");
+        Serial.print("Hex: ");
+        for (size_t i = 0; i < len + 7; i++) {
+            Serial.printf("%02X ", payload[i]); // Print as hex
+        }
+        Serial.println();
+        Serial.print("ASCII: ");
+        for (size_t i = 0; i < len + 7; i++) {
+            if (payload[i] >= 32 && payload[i] <= 126) {
+                Serial.print((char)payload[i]); // Printable ASCII
+            } else {
+                Serial.print('.');
+            }
+        }
+        Serial.printf(" [Battery: %d%%, Voltage: %.2fV]\n", batteryLevel, voltage / 100.0); // Display battery data
+        monitormsg = "TX[" + String(msgCount) + "]:OK:" + String((int)tx_time) + "ms";
+    } else {
+        monitormsg = "TX [" + String(msgCount) + "] Fail";
+    }
+    debugMessage(monitormsg);
 }
 
 void onReceive(int packetSize) {
-    if (packetSize == 0) return;          // if there's no packet, return
+    /*if (packetSize == 0) return;          // if there's no packet, return
 
     // read packet header bytes:
     int recipient = LoRa.read();          // recipient address
@@ -194,12 +254,53 @@ void onReceive(int packetSize) {
     Serial.println("Message: " + incoming);
     Serial.println("RSSI: " + String(LoRa.packetRssi()));
     Serial.println("Snr: " + String(LoRa.packetSnr()));
-    Serial.println();
+    Serial.println();*/
+
+    if (packetSize == 0) return;  // If no packet, return
+
+    // Read packet header bytes
+    int recipient = LoRa.read();              // Destination address
+    byte sender = LoRa.read();                // Sender address
+    byte incomingMsgId = LoRa.read();         // Message ID
+    byte incomingLength = LoRa.read();        // Payload length
+    byte batteryLevel = LoRa.read();          // Battery percentage
+    uint16_t voltage = (LoRa.read() << 8) | LoRa.read(); // Combine high and low bytes for voltage
+
+    // Read the payload data (message string)
+    String incoming = "";
+    while (LoRa.available()) {
+        incoming += (char)LoRa.read();
+    }
+
+    // Validate the payload length
+    if (incomingLength != incoming.length()) {
+        Serial.println("Error: Message length does not match payload length");
+        return;
+    }
+
+    // Check if the message is for this device or broadcast
+    if (recipient != localAddress && recipient != 0xFF) {
+        Serial.println("This message is not for me.");
+        return;
+    }
+
+    // Debugging: Display parsed packet details
+    Serial.println("=== Received Packet ===");
+    Serial.println("From: 0x" + String(sender, HEX));
+    Serial.println("To: 0x" + String(recipient, HEX));
+    Serial.println("Message ID: " + String(incomingMsgId));
+    Serial.println("Message Length: " + String(incomingLength));
+    Serial.println("Battery Level: " + String(batteryLevel) + "%");
+    Serial.println("Voltage: " + String(voltage / 100.0, 2) + "V");
+    Serial.println("Message: " + incoming);
+    Serial.println("RSSI: " + String(LoRa.packetRssi()) + " dBm");
+    Serial.println("SNR: " + String(LoRa.packetSnr()) + " dB");
+    Serial.println("========================\n");
 }
 
 // Send debug to serial and display
 void debugMessage(String message) {
-    // Send to Serial first
+ /*   // Send to Serial first
     Serial.println(message);
     // Add new message to the buffer
     if (currentLine < MAX_LINES) {
@@ -219,50 +320,91 @@ void debugMessage(String message) {
         display.setCursor(0, i * 10); // Adjust line spacing as needed
         display.println(messageBuffer[i]);
     }
+    display.display();*/
+
+    // Send to Serial
+    Serial.println(message);
+    // Add the new message to the buffer
+    if (currentLine < MAX_LINES) {
+        messageBuffer[currentLine] = message; // Add to the next available line
+        currentLine++;
+    } else {
+        // Shift all lines up by 1 (scroll effect)
+        for (int i = 1; i < MAX_LINES; i++) {
+            messageBuffer[i - 1] = messageBuffer[i];
+        }
+        messageBuffer[MAX_LINES - 1] = message; // Add the new message to the last line
+    }
+    // Render debug messages on the display
+    display.clearDisplay();
+    /*for (int i = 0; i < currentLine; i++) {
+        display.drawString(0, i * 10, messageBuffer[i]); // Adjust line spacing as needed
+    }*/
+    for (int i = 0; i < currentLine; i++) {
+        display.setCursor(0, i * 10); // Adjust line spacing as needed
+        display.println(messageBuffer[i]);
+    }    
+    // Display battery status
+    BatteryStatus status = getBatteryStatus();
+    String batteryText = String(status.percentage) + "%";
+    String voltageText = String(status.voltage, 2) + "V";
+    /*int batteryWidth = display.getStringWidth(batteryText);
+    display.drawString(display.width() - batteryWidth - 5, 0, batteryText); // Battery percentage
+    int voltageWidth = display.getStringWidth(voltageText);
+    display.drawString(display.width() - voltageWidth - 5, 12, voltageText); // Battery voltage*/
+    // Calculate width of the text to right-align
+    int16_t x1, y1; // Variables to store bounding box coordinates (not used here)
+    uint16_t textWidth, textHeight;  // Dimensions of the text
+    // Get width of battery percentage
+    display.getTextBounds(batteryText, 0, 0, &x1, &y1, &textWidth, &textHeight);
+    display.setCursor(SCREEN_WIDTH - textWidth - 5, 0); // Right-align for percentage
+    display.print(batteryText);
+    // Get width of battery voltage
+    display.getTextBounds(voltageText, 0, 0, &x1, &y1, &textWidth, &textHeight);
+    display.setCursor(SCREEN_WIDTH - textWidth - 5, 10); // Right-align for voltage
+    display.print(voltageText);
+
+    // Render the updated screen
     display.display();
 }
 
-//LoRaV3
-// Pin definitions
-#define BATTERY_PIN VBAT_ADC    // GPIO1 (VBAT_ADC)
-#define ADC_CTRL_PIN VBAT_CTRL  // GPIO37 (VBAT_CTRL)
-#define MAX_ADC_READING 4095    // 12-bit ADC
-#define REF_VOLTAGE 3.29        // Adjust based on measured reference voltage
-#define VOLTAGE_DIVIDER_RATIO 5.16
-#define BATTERY_MIN_VOLTAGE 3.0 // Minimum battery voltage
-#define BATTERY_MAX_VOLTAGE 4.2 // Maximum battery voltage
+//LoRaV2
+#define BATTERY_PIN 37         // VBAT_ADC
+#define ADC_CTRL_PIN 21        // VBAT_CTRL
+#define MAX_ADC_READING 4095   // 12-bit ADC
+#define VOLTAGE_DIVIDER_RATIO 3.58 // Fine-tuned ratio
+#define BATTERY_MIN_VOLTAGE 3.0     // Minimum battery voltage
+#define BATTERY_MAX_VOLTAGE 4.2     // Maximum battery voltage
+#define REF_VOLTAGE 3.3 // Replace with the correct reference voltage if different
 
 BatteryStatus getBatteryStatus() {
-    // Enable voltage divider (if needed)
+    // Enable voltage divider
     pinMode(ADC_CTRL_PIN, OUTPUT);
     digitalWrite(ADC_CTRL_PIN, LOW);
-    delay(10);
-
+    delay(10); // Stabilize
     // Read ADC value
     int rawAdc = analogRead(BATTERY_PIN);
-
-    // Disable voltage divider (if needed)
+    // Disable voltage divider
     digitalWrite(ADC_CTRL_PIN, HIGH);
-
     // Calculate pin voltage
     float pinVoltage = (rawAdc / (float)MAX_ADC_READING) * REF_VOLTAGE;
-
-    // Calculate battery voltage
+    // Calculate actual battery voltage
     float batteryVoltage = pinVoltage * VOLTAGE_DIVIDER_RATIO;
-
+    // Debugging
+    Serial.println("=== Battery Debugging ===");
+    Serial.println("Raw ADC Value: " + String(rawAdc));
+    Serial.println("Pin Voltage: " + String(pinVoltage, 2) + " V");
+    Serial.println("Calculated Battery Voltage: " + String(batteryVoltage, 2) + " V");
     // Calculate battery percentage
-    uint8_t batteryPercentage;
-    if (batteryVoltage <= BATTERY_MIN_VOLTAGE) {
-        batteryPercentage = 0; // Empty
-    } else if (batteryVoltage >= BATTERY_MAX_VOLTAGE) {
-        batteryPercentage = 100; // Full
-    } else {
-        batteryPercentage = (uint8_t)(((batteryVoltage - BATTERY_MIN_VOLTAGE) / 
-                                       (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE)) * 100);
+    uint8_t percentage = 0;
+    if (batteryVoltage >= BATTERY_MAX_VOLTAGE) {
+        percentage = 100;
+    } else if (batteryVoltage > BATTERY_MIN_VOLTAGE) {
+        percentage = (uint8_t)((batteryVoltage - BATTERY_MIN_VOLTAGE) / 
+                               (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE) * 100);
     }
-
-    // Return battery status
-    return {batteryPercentage, batteryVoltage};
+    return {percentage, batteryVoltage};
 }
+
 
 #endif // defined(WYMAN_LORAV2)

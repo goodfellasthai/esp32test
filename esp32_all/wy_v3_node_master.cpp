@@ -251,10 +251,14 @@ void debugMessage(String message) {
     BatteryStatus status = getBatteryStatus();
     String batteryText = String(status.percentage) + "%";
     String voltageText = String(status.voltage, 2) + "V";
-    int batteryWidth = display.getStringWidth(batteryText);
+    /*int batteryWidth = display.getStringWidth(batteryText);
     display.drawString(display.width() - batteryWidth - 5, 0, batteryText); // Battery percentage
     int voltageWidth = display.getStringWidth(voltageText);
-    display.drawString(display.width() - voltageWidth - 5, 12, voltageText); // Battery voltage
+    display.drawString(display.width() - voltageWidth - 5, 12, voltageText); // Battery voltage*/
+    display.setCursor(SCREEN_WIDTH - 40, 0); // Top-right corner for percentage
+    display.print(batteryText);
+    display.setCursor(SCREEN_WIDTH - 40, 10); // Below percentage for voltage
+    display.print(voltageText);
 
     // Render the updated screen
     display.display();
@@ -275,19 +279,19 @@ BatteryStatus getBatteryStatus() {
     pinMode(ADC_CTRL_PIN, OUTPUT);
     digitalWrite(ADC_CTRL_PIN, LOW);
     delay(10);
-
     // Read ADC value
     int rawAdc = analogRead(BATTERY_PIN);
-
     // Disable voltage divider (if needed)
     digitalWrite(ADC_CTRL_PIN, HIGH);
-
     // Calculate pin voltage
     float pinVoltage = (rawAdc / (float)MAX_ADC_READING) * REF_VOLTAGE;
-
     // Calculate battery voltage
     float batteryVoltage = pinVoltage * VOLTAGE_DIVIDER_RATIO;
-
+    // Debugging
+    Serial.println("=== Battery Debugging ===");
+    Serial.println("Raw ADC Value: " + String(rawAdc));
+    Serial.println("Pin Voltage: " + String(pinVoltage, 2) + " V");
+    Serial.println("Calculated Battery Voltage: " + String(batteryVoltage, 2) + " V");
     // Calculate battery percentage
     uint8_t batteryPercentage;
     if (batteryVoltage <= BATTERY_MIN_VOLTAGE) {
@@ -298,7 +302,6 @@ BatteryStatus getBatteryStatus() {
         batteryPercentage = (uint8_t)(((batteryVoltage - BATTERY_MIN_VOLTAGE) / 
                                        (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE)) * 100);
     }
-
     // Return battery status
     return {batteryPercentage, batteryVoltage};
 }
