@@ -66,7 +66,7 @@ int currentLine = 0;             // Tracks the current line for scrolling
 #define irqPin      26    // GPIO26 - LoRaV2 radio interrupt
 
 // Define LoRaV2 parameters
-#define PAUSE               5           // Pause in seconds between transmits
+#define PAUSE               10           // Pause in seconds between transmits
 #define FREQUENCY           915.0       // Frequency in MHz
 //#define FREQUENCY           433.0       // Frequency in MHz v3 only
 #define BANDWIDTH           250.0       // Bandwidth in kHz
@@ -77,12 +77,15 @@ String outgoing;              // outgoing message
 String monitormsg;            // use for message to monitor on serial or display
 
 int msgCount = 0;            // count of outgoing messages
+// Adress info
 byte localAddress = 0xBB;     // address of base station
 //byte localAddress = 0xDD;     // address of drone device
 //byte localAddress = 0xCC;     // address of node device
 byte destination = 0xFF;      // destination to send to FF is broadcast to everyone or can specify specific address
-long lastSendTime = 0;        // last send time
-int interval = PAUSE * 1000;          // converts the pause time to milliseconds
+
+long lastSendTime = 0;        // Last send time
+uint64_t tx_time;             // Transaction time
+int interval = PAUSE * 1000;  // converts the pause time to milliseconds
 
 void wy_v2_node_master_setup() {
 
@@ -127,10 +130,10 @@ void wy_v2_node_master_loop() {
 
     // Check if it's time to send a message as the first message will always wait the pause time as no last send time
     if (millis() - lastSendTime > interval) {
-        String message = "HeLoRa World!";               // Message to send
-        unsigned long startTime = millis();             // Record the start time
+        String message = "Transmit test message LoRaV2";  
+        tx_time = millis();             // Record the start time
         sendMessage(message);                           // Send the message
-        unsigned long duration = millis() - startTime;  // Calculate duration
+        tx_time = millis() - tx_time;  // Calculate duration
         // Send the monitor message to serial and display
         monitormsg = "TX [" + String(msgCount) + "] OK (" + String(duration) + " ms)";
         //Serial.println(monitormsg);   // Debug TX

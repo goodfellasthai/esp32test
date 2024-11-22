@@ -10,5 +10,6 @@ void wy_v3_node_master_loop();
 
 void rx();
 void sendMessage(String outgoing);
-void onReceive(int packetSize);
+void onReceive(String rxdata);
 void debugMessage(String message);
+uint8_t getBatteryPercentage();
