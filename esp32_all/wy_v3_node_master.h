@@ -7,5 +7,8 @@
 
 void wy_v3_node_master_setup();
 void wy_v3_node_master_loop();
+
 void rx();
+void sendMessage(String outgoing);
+void onReceive(int packetSize);
 void debugMessage(String message);

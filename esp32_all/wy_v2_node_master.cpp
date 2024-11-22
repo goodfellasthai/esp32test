@@ -11,6 +11,36 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+/*// LoRaV3 Pins
+//V3
+// 'PRG' Button
+#ifndef BUTTON
+#define BUTTON    GPIO_NUM_0
+#endif
+// LED pin & PWM parameters
+#define LED_PIN   GPIO_NUM_35
+#define LED_FREQ  5000
+#define LED_CHAN  0
+#define LED_RES   8
+// External power control
+#define VEXT      GPIO_NUM_36
+// Battery voltage measurement
+#define VBAT_CTRL GPIO_NUM_37
+#define VBAT_ADC  GPIO_NUM_1
+// SPI pins
+#define SS        GPIO_NUM_8
+#define MOSI      GPIO_NUM_10
+#define MISO      GPIO_NUM_11
+#define SCK       GPIO_NUM_9
+// Radio pins
+#define irqPin      14
+#define resetPin  12
+#define csPin 13
+// Display pins
+#define OLED_SDA  17
+#define OLED_SCL  18
+#define OLED_RESET 21*/
+
 // OLED display dimensions
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -19,8 +49,11 @@
 #define OLED_ADDRESS 0x3C // Replace with your OLED's I2C address
 // Pins for the OLED LoRaV2 I2C
 #define OLED_RESET 16 // LoRaV2
+//#define OLED_RESET 21 // LoRaV3
 #define OLED_SDA 4 // LoRaV2
+//#define OLED_SDA 17 // LoRaV3
 #define OLED_SCL 15 // LoRaV2
+//#define OLED_SCL 18 // LoRaV3
 
 // Create an SSD1306 object for I2C
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);

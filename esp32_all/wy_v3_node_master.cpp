@@ -127,6 +127,55 @@ void rx() {
   rxFlag = true;
 }
 
+/*void sendMessage(String outgoing) {
+    LoRaBeginPacket(false);               // start packet
+    LoRaWrite(destination);               // add destination address
+    LoRaWrite(localAddress);              // add sender address
+    LoRaWrite(msgCount);                  // add message ID
+    LoRaWrite(outgoing.length());         // add payload length
+    LoRaPrint(outgoing.c_str());          // add payload (convert String to C string)
+    LoRaEndPacket();                      // finish packet and send it
+    msgCount++;                           // increment message ID
+}
+
+void onReceive(int packetSize) {
+    if (packetSize == 0) return;          // if there's no packet, return
+
+    // read packet header bytes:
+    int recipient = LoRaRead();           // recipient address
+    byte sender = LoRaRead();             // sender address
+    byte incomingMsgId = LoRaRead();      // incoming msg ID
+    byte incomingLength = LoRaRead();     // incoming msg length
+
+    String incoming = "";
+
+    while (LoRaAvailable()) {
+        incoming += (char)LoRaRead();
+    }
+
+    if (incomingLength != incoming.length()) {   // check length for error
+        Serial.println("error: message length does not match length");
+        return;                                  // skip rest of function
+    }
+
+    // if the recipient isn't this device or broadcast,
+    if (recipient != localAddress && recipient != 0xFF) {
+        Serial.println("This message is not for me.");
+        return;                                  // skip rest of function
+    }
+
+    // if message is for this device, or broadcast, print details:
+    Serial.println("Received from: 0x" + String(sender, HEX));
+    Serial.println("Sent to: 0x" + String(recipient, HEX));
+    Serial.println("Message ID: " + String(incomingMsgId));
+    Serial.println("Message length: " + String(incomingLength));
+    Serial.println("Message: " + incoming);
+    Serial.println("RSSI: " + String(LoRaPacketRssi()));
+    Serial.println("Snr: " + String(LoRaPacketSnr()));
+    Serial.println();
+}*/
+
+
 // Send debug to serial and display
 void debugMessage(String message) {
     // Send to Serial first
