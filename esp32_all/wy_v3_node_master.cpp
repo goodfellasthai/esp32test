@@ -51,6 +51,13 @@ byte destination = 0xFF;      // destination to send to FF is broadcast to every
 long lastSendTime = 0;        // Last send time
 uint64_t tx_time;             // Transaction time
 
+// Screen timeout stuff
+bool isScreenOn = true;  // Screen state
+unsigned long lastActivityTime = 0;  // Last time the screen was active
+const unsigned long SCREEN_TIMEOUT = 20000;  // 20 seconds timeout
+#define PRG_BTN 0  // GPIO0 for PRG button
+#define POWER_LONGPRESS 3000 // Must longpress PRG 3 seconds to shutdown
+
 void wy_v3_node_master_setup() {
   heltec_setup();
 
@@ -84,12 +91,39 @@ void wy_v3_node_master_setup() {
   debugMessage("Battery: " + String(batteryLevel) + "% " + String(voltage / 100.0, 2) + "V");
   currentLine = 0;  // Reset the screen for a refresh will delay for pause time on first loop before TX and display will refresh on current line reset
 
+  // Screen timeout stuff
+  pinMode(PRG_BTN, INPUT_PULLUP);  // PRG button setup
+
   // Start receiving
   RADIOLIB_OR_HALT(radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF));
 }
 
 void wy_v3_node_master_loop() {
   heltec_loop();
+
+  // Screen timeout stuff
+  static unsigned long buttonPressTime = 0;  // Tracks button press duration
+  bool buttonState = digitalRead(PRG_BTN);
+
+  // Long press detection (power off)
+  if (buttonState == LOW) {
+      if (buttonPressTime == 0) {
+          buttonPressTime = millis();  // Start tracking press time
+      } else if (millis() - buttonPressTime > POWER_LONGPRESS) {  // 3-second long press
+          heltec_power_off();  // Power off the device and put into deep sleep
+      }
+  } else if (buttonPressTime > 0) {  // Button released
+      if (millis() - buttonPressTime < POWER_LONGPRESS) {  // Short press
+          toggleScreen();
+      }
+      buttonPressTime = 0;  // Reset button press time
+  }
+
+  // Screen timeout logic
+  if (isScreenOn && millis() - lastActivityTime > SCREEN_TIMEOUT) {
+      turnScreenOff();
+  }
+
   
   if ( (millis() - lastSendTime) > (PAUSE * 1000) )  {
     //both.printf("TX [%s] ", String(msgCount).c_str());
@@ -229,6 +263,10 @@ void onReceive(String rxdata) {
 
 
 void debugMessage(String message) {
+    // Screen timeout stuff // Not required unless we want to keep the screen on if a deug message comes through within the screen timeout period
+    //if (isScreenOn) {
+    //lastActivityTime = millis();  // Reset activity timer
+    //}
     // Send to Serial
     Serial.println(message);
     // Add the new message to the buffer
@@ -264,7 +302,7 @@ void debugMessage(String message) {
     display.display();
 }
 
-//LoRaV3
+//LoRaV3 battery
 // Pin definitions
 #define BATTERY_PIN VBAT_ADC    // GPIO1 (VBAT_ADC)
 #define ADC_CTRL_PIN VBAT_CTRL  // GPIO37 (VBAT_CTRL)
@@ -304,6 +342,33 @@ BatteryStatus getBatteryStatus() {
     }
     // Return battery status
     return {batteryPercentage, batteryVoltage};
+}
+
+// Screen timeout stuff
+void heltec_power_off() {
+    Serial.println("Powering off...");
+    esp_deep_sleep_start();  // Put ESP32 into deep sleep
+}
+
+void toggleScreen() {
+    if (isScreenOn) {
+        turnScreenOff();
+    } else {
+        turnScreenOn();
+    }
+}
+
+void turnScreenOn() {
+    isScreenOn = true;
+    display.displayOn();  // Turn on the display
+    lastActivityTime = millis();  // Reset activity timer
+    Serial.println("Screen turned on");
+}
+
+void turnScreenOff() {
+    isScreenOn = false;
+    display.displayOff();  // Turn off the display
+    Serial.println("Screen turned off to save battery");
 }
 
 #endif // defined(WYMAN_LORAV3)

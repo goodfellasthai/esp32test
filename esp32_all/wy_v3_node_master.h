@@ -16,3 +16,9 @@ void debugMessage(String message);
 
 // Function declarations
 BatteryStatus getBatteryStatus();
+
+// Screen timeout stuff
+void heltec_power_off();
+void toggleScreen();
+void turnScreenOn();
+void turnScreenOff();
