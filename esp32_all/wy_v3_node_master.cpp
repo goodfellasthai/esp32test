@@ -31,11 +31,6 @@
 // US: Up to 20-30 dBm, depending on specific frequency bands.
 #define TRANSMIT_POWER      0
 
-// Battery stuff
-// Battery voltage measurement
-#define VBAT_CTRL GPIO_NUM_37
-#define VBAT_ADC  GPIO_NUM_1
-
 // OLED Stuff
 #define MAX_LINES 6      // Maximum number of lines visible on the display
 String messageBuffer[MAX_LINES]; // Buffer to store lines
@@ -83,9 +78,10 @@ void wy_v3_node_master_setup() {
   debugMessage("Frequency:" + String(FREQUENCY, 1) + "MHz");
   debugMessage("Bandwidth:" + String(BANDWIDTH, 1) + "kHz");
   debugMessage("Spread:" + String(SPREADING_FACTOR) + " TXP:" + String(TRANSMIT_POWER) + "dBm");
-  uint8_t batteryLevel = getBatteryPercentage(); // Example function to get battery level
-  //uint8_t batteryLevel = 67; // Example function to get battery level  
-  debugMessage("Battery:" + String(batteryLevel) + "%");
+  BatteryStatus batteryStatus = getBatteryStatus();
+  uint8_t batteryLevel = batteryStatus.percentage;
+  uint16_t voltage = (uint16_t)(batteryStatus.voltage * 100);
+  debugMessage("Battery: " + String(batteryLevel) + "% " + String(voltage / 100.0, 2) + "V");
   currentLine = 0;  // Reset the screen for a refresh will delay for pause time on first loop before TX and display will refresh on current line reset
 
   // Start receiving
@@ -131,44 +127,48 @@ void rx() {
 
 void sendMessage(String outgoing) {
     uint8_t len = outgoing.length();
-    uint8_t batteryLevel = getBatteryPercentage(); // Example function to get battery level
-    //uint8_t batteryLevel = 67; // Example function to get battery level
-    uint8_t payload[len + 5]; // Allocate space for header + battery level + payload
+    BatteryStatus batteryStatus = getBatteryStatus(); // Get battery status (percentage and voltage)
+    uint8_t batteryLevel = batteryStatus.percentage;  // Extract battery percentage
+    uint16_t voltage = (uint16_t)(batteryStatus.voltage * 100); // Scale voltage to an integer (e.g., 4.12V -> 412)
+
+    uint8_t payload[len + 7]; // Allocate space for header + battery level + voltage + payload
 
     // Prepare the header
     payload[0] = destination;  // Destination address
     payload[1] = localAddress; // Sender address
     payload[2] = msgCount;     // Message ID
     payload[3] = len;          // Payload length
-    payload[4] = batteryLevel; // Battery level after length
+    payload[4] = batteryLevel; // Battery level
+    payload[5] = voltage >> 8; // High byte of voltage
+    payload[6] = voltage & 0xFF; // Low byte of voltage
 
     // Add the payload data (the message string)
-    outgoing.getBytes(payload + 5, len + 1); // Convert String to binary array starting from payload[5]
+    outgoing.getBytes(payload + 7, len + 1); // Convert String to binary array starting from payload[7]
 
     // Start transmission
     msgCount++;
     tx_time = millis();
-    int16_t status = radio.transmit(payload, len + 5); // Transmit header + battery level + payload
+    int16_t status = radio.transmit(payload, len + 7); // Transmit header + battery data + payload
     tx_time = millis() - tx_time;
 
     // Debug output
     if (_radiolib_status == RADIOLIB_ERR_NONE) {
         Serial.println("Payload Debug:");
         Serial.print("Hex: ");
-        for (size_t i = 0; i < len + 5; i++) {
+        for (size_t i = 0; i < len + 7; i++) {
             Serial.printf("%02X ", payload[i]); // Print as hex
         }
         Serial.println();
         Serial.print("ASCII: ");
-        for (size_t i = 0; i < len + 5; i++) {
+        for (size_t i = 0; i < len + 7; i++) {
             if (payload[i] >= 32 && payload[i] <= 126) {
                 Serial.print((char)payload[i]); // Printable ASCII
             } else {
                 Serial.print('.');
             }
         }
-        Serial.printf(" [Battery: %d%%]\n", batteryLevel); // Display battery level
-        monitormsg = "TX [" + String(msgCount) + "] OK (" + String((int)tx_time) + " ms)";
+        Serial.printf(" [Battery: %d%%, Voltage: %.2fV]\n", batteryLevel, voltage / 100.0); // Display battery data
+        monitormsg = "TX[" + String(msgCount) + "]:OK:" + String((int)tx_time) + "ms";
     } else {
         Serial.printf("Fail (%d)\n", _radiolib_status);
         monitormsg = "TX [" + String(msgCount) + "] Fail (" + String(_radiolib_status) + ")";
@@ -183,7 +183,7 @@ void onReceive(String rxdata) {
     }
 
     size_t len = rxdata.length();
-    if (len < 5) { // Ensure the message has at least a header + battery level
+    if (len < 7) { // Ensure the message has at least a header + battery data
         Serial.println("Error: Insufficient data length.");
         return;
     }
@@ -197,17 +197,18 @@ void onReceive(String rxdata) {
     uint8_t sender = buffer[1];
     uint8_t msgId = buffer[2];
     uint8_t messageLen = buffer[3];
-    uint8_t batteryLevel = buffer[4]; // Battery level follows the length
+    uint8_t batteryLevel = buffer[4];        // Battery level
+    uint16_t voltage = (buffer[5] << 8) | buffer[6]; // Combine high and low bytes for voltage
 
     // Verify the payload length
-    if (len - 5 != messageLen) {
+    if (len - 7 != messageLen) {
         Serial.println("Error: Message length mismatch!");
         return;
     }
 
     // Extract the message
     String message = "";
-    for (size_t i = 5; i < len; i++) {
+    for (size_t i = 7; i < len; i++) {
         message += (char)buffer[i];
     }
 
@@ -222,15 +223,15 @@ void onReceive(String rxdata) {
     debugMessage("To: 0x" + String(recipient, HEX));
     debugMessage("ID: " + String(msgId));
     debugMessage("Battery Level: " + String(batteryLevel) + "%");
+    debugMessage("Voltage: " + String(voltage / 100.0, 2) + "V");
     debugMessage("Message: " + message);
 }
 
-// Send debug to serial and display
-void debugMessage(String message) {
-    // Send to Serial first
-    Serial.println(message);
 
-    // Add new message to the buffer
+void debugMessage(String message) {
+    // Send to Serial
+    Serial.println(message);
+    // Add the new message to the buffer
     if (currentLine < MAX_LINES) {
         messageBuffer[currentLine] = message; // Add to the next available line
         currentLine++;
@@ -241,40 +242,39 @@ void debugMessage(String message) {
         }
         messageBuffer[MAX_LINES - 1] = message; // Add the new message to the last line
     }
-
-    // Render all lines to display
+    // Render debug messages on the display
     display.clear();
-    
-    // Draw debug messages
     for (int i = 0; i < currentLine; i++) {
         display.drawString(0, i * 10, messageBuffer[i]); // Adjust line spacing as needed
     }
+    // Display battery status
+    BatteryStatus status = getBatteryStatus();
+    String batteryText = String(status.percentage) + "%";
+    String voltageText = String(status.voltage, 2) + "V";
+    int batteryWidth = display.getStringWidth(batteryText);
+    display.drawString(display.width() - batteryWidth - 5, 0, batteryText); // Battery percentage
+    int voltageWidth = display.getStringWidth(voltageText);
+    display.drawString(display.width() - voltageWidth - 5, 12, voltageText); // Battery voltage
 
-    // Draw battery percentage in the top-right corner
-    uint8_t batteryLevel = getBatteryPercentage(); // Call the battery percentage function
-    String batteryText = String(batteryLevel) + "%"; // Format as "XX%"
-    int16_t batteryWidth = display.getStringWidth(batteryText); // Get the width of the battery text
-    display.drawString(display.width() - batteryWidth - 5, 0, batteryText); // Adjust padding as needed
-
-    // Update the display
+    // Render the updated screen
     display.display();
 }
 
+//LoRaV3
+// Pin definitions
 #define BATTERY_PIN VBAT_ADC    // GPIO1 (VBAT_ADC)
 #define ADC_CTRL_PIN VBAT_CTRL  // GPIO37 (VBAT_CTRL)
 #define MAX_ADC_READING 4095    // 12-bit ADC
-//#define REF_VOLTAGE 3.3         // ADC reference voltage
-#define REF_VOLTAGE 3.29 // Adjust based on measured reference voltage
-//#define VOLTAGE_DIVIDER_RATIO 2.0 // Adjust based on actual resistor values
-#define VOLTAGE_DIVIDER_RATIO 5.14 // Use actual measured ratio
-#define BATTERY_MIN_VOLTAGE 3.0   // Minimum battery voltage
-#define BATTERY_MAX_VOLTAGE 4.2   // Maximum battery voltage
+#define REF_VOLTAGE 3.29        // Adjust based on measured reference voltage
+#define VOLTAGE_DIVIDER_RATIO 5.16
+#define BATTERY_MIN_VOLTAGE 3.0 // Minimum battery voltage
+#define BATTERY_MAX_VOLTAGE 4.2 // Maximum battery voltage
 
-uint8_t getBatteryPercentage() {
+BatteryStatus getBatteryStatus() {
     // Enable voltage divider (if needed)
     pinMode(ADC_CTRL_PIN, OUTPUT);
     digitalWrite(ADC_CTRL_PIN, LOW);
-    delay(10); // Allow voltage to stabilize
+    delay(10);
 
     // Read ADC value
     int rawAdc = analogRead(BATTERY_PIN);
@@ -285,28 +285,22 @@ uint8_t getBatteryPercentage() {
     // Calculate pin voltage
     float pinVoltage = (rawAdc / (float)MAX_ADC_READING) * REF_VOLTAGE;
 
-    // Calculate actual battery voltage
+    // Calculate battery voltage
     float batteryVoltage = pinVoltage * VOLTAGE_DIVIDER_RATIO;
 
-    // Debugging information
-    Serial.println("=== Battery Debugging ===");
-    Serial.println("Raw ADC Value: " + String(rawAdc));
-    Serial.println("Pin Voltage: " + String(pinVoltage, 2) + " V");
-    Serial.println("Calculated Battery Voltage: " + String(batteryVoltage, 2) + " V");
-
     // Calculate battery percentage
+    uint8_t batteryPercentage;
     if (batteryVoltage <= BATTERY_MIN_VOLTAGE) {
-        Serial.println("Battery: 0% (Empty)");
-        return 0;
+        batteryPercentage = 0; // Empty
     } else if (batteryVoltage >= BATTERY_MAX_VOLTAGE) {
-        Serial.println("Battery: 100% (Full)");
-        return 100;
+        batteryPercentage = 100; // Full
     } else {
-        uint8_t batteryPercentage = (uint8_t)(((batteryVoltage - BATTERY_MIN_VOLTAGE) / (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE)) * 100);
-        Serial.println("Battery: " + String(batteryPercentage) + "%");
-        return batteryPercentage;
+        batteryPercentage = (uint8_t)(((batteryVoltage - BATTERY_MIN_VOLTAGE) / 
+                                       (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE)) * 100);
     }
-}
 
+    // Return battery status
+    return {batteryPercentage, batteryVoltage};
+}
 
 #endif // defined(WYMAN_LORAV3)

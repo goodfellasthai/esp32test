@@ -222,4 +222,47 @@ void debugMessage(String message) {
     display.display();
 }
 
+//LoRaV3
+// Pin definitions
+#define BATTERY_PIN VBAT_ADC    // GPIO1 (VBAT_ADC)
+#define ADC_CTRL_PIN VBAT_CTRL  // GPIO37 (VBAT_CTRL)
+#define MAX_ADC_READING 4095    // 12-bit ADC
+#define REF_VOLTAGE 3.29        // Adjust based on measured reference voltage
+#define VOLTAGE_DIVIDER_RATIO 5.16
+#define BATTERY_MIN_VOLTAGE 3.0 // Minimum battery voltage
+#define BATTERY_MAX_VOLTAGE 4.2 // Maximum battery voltage
+
+BatteryStatus getBatteryStatus() {
+    // Enable voltage divider (if needed)
+    pinMode(ADC_CTRL_PIN, OUTPUT);
+    digitalWrite(ADC_CTRL_PIN, LOW);
+    delay(10);
+
+    // Read ADC value
+    int rawAdc = analogRead(BATTERY_PIN);
+
+    // Disable voltage divider (if needed)
+    digitalWrite(ADC_CTRL_PIN, HIGH);
+
+    // Calculate pin voltage
+    float pinVoltage = (rawAdc / (float)MAX_ADC_READING) * REF_VOLTAGE;
+
+    // Calculate battery voltage
+    float batteryVoltage = pinVoltage * VOLTAGE_DIVIDER_RATIO;
+
+    // Calculate battery percentage
+    uint8_t batteryPercentage;
+    if (batteryVoltage <= BATTERY_MIN_VOLTAGE) {
+        batteryPercentage = 0; // Empty
+    } else if (batteryVoltage >= BATTERY_MAX_VOLTAGE) {
+        batteryPercentage = 100; // Full
+    } else {
+        batteryPercentage = (uint8_t)(((batteryVoltage - BATTERY_MIN_VOLTAGE) / 
+                                       (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE)) * 100);
+    }
+
+    // Return battery status
+    return {batteryPercentage, batteryVoltage};
+}
+
 #endif // defined(WYMAN_LORAV2)

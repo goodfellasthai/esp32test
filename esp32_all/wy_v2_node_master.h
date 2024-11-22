@@ -4,6 +4,7 @@
 // can't put the main .cpp reliant libraries in .h as would conflict with other libraries using the same functions
 // the .h always needs called first in the .cpp module file so that the application knows the functions it can use for the board
 #include "wyconfig.h"
+#include "globals.h"
 #include "./res/wy_images.h"
 
 void wy_v2_node_master_setup();
@@ -12,3 +13,6 @@ void wy_v2_node_master_loop();
 void sendMessage(String outgoing);
 void onReceive(int packetSize);
 void debugMessage(String message);
+
+// Function declarations
+BatteryStatus getBatteryStatus();
