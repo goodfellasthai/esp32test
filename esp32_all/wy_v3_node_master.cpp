@@ -251,14 +251,14 @@ void debugMessage(String message) {
     BatteryStatus status = getBatteryStatus();
     String batteryText = String(status.percentage) + "%";
     String voltageText = String(status.voltage, 2) + "V";
-    /*int batteryWidth = display.getStringWidth(batteryText);
+    int batteryWidth = display.getStringWidth(batteryText);
     display.drawString(display.width() - batteryWidth - 5, 0, batteryText); // Battery percentage
     int voltageWidth = display.getStringWidth(voltageText);
-    display.drawString(display.width() - voltageWidth - 5, 12, voltageText); // Battery voltage*/
-    display.setCursor(SCREEN_WIDTH - 40, 0); // Top-right corner for percentage
+    display.drawString(display.width() - voltageWidth - 5, 12, voltageText); // Battery voltage
+    /* V2 display.setCursor(SCREEN_WIDTH - 40, 0); // Top-right corner for percentage
     display.print(batteryText);
     display.setCursor(SCREEN_WIDTH - 40, 10); // Below percentage for voltage
-    display.print(voltageText);
+    display.print(voltageText); */
 
     // Render the updated screen
     display.display();
