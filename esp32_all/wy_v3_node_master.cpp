@@ -7,6 +7,8 @@
 // Turns the 'PRG' button into the power button, long press is off 
 #define HELTEC_POWER_BUTTON   // must be before "#include <heltec_unofficial.h>"
 #include <heltec_unofficial.h>
+// For MAC address and ESP Now
+#include <WiFi.h>
 // LORA STUFF
 // Pause between transmited packets in seconds.
 // Set to zero to only transmit a packet when pressing the user button
@@ -47,11 +49,16 @@ String monitormsg;            // use for message to monitor on serial or display
 
 volatile bool rxFlag = false;
 int msgCount = 0;
+
 // Adress info
-byte localAddress = 0xBB;     // address of base station
-//byte localAddress = 0xDD;     // address of drone device
-//byte localAddress = 0xCC;     // address of node device
-byte destination = 0xFF;      // destination to send to FF is broadcast to everyone or can specify specific address
+# if defined(WY_NODE_MASTER)
+  byte localAddress = 0xBB;     // address of base station
+#elif defined(WY_NODE_DRONE)
+  byte localAddress = 0xDD;     // address of drone device
+#elif defined(WY_NODE_01)
+  byte localAddress = 0xCC;     // address of node device
+#endif
+byte destination = 0xFF;      // destination to send to FF is broadcast to everyone default for all devices braodcast to nodes in range
 
 long lastSendTime = 0;        // Last send time
 uint64_t tx_time;             // Transaction time
@@ -59,12 +66,15 @@ uint64_t tx_time;             // Transaction time
 // Screen timeout stuff
 bool isScreenOn = true;  // Screen state
 unsigned long lastActivityTime = 0;  // Last time the screen was active
-const unsigned long SCREEN_TIMEOUT = 20000;  // 20 seconds timeout
+const unsigned long SCREEN_TIMEOUT = 30000;  // 30 seconds timeout
 #define PRG_BTN 0  // GPIO0 for PRG button
 #define POWER_LONGPRESS 1500 // Must longpress PRG 1.5 seconds on v3 to poweroff so doesnt go into bootmode (Still goes int obootmode)
 
 void wy_v3_node_master_setup() {
   heltec_setup();
+
+  // Initialize Wi-Fi in Station mode (required for getting MAC)
+  WiFi.mode(WIFI_STA);
 
   // Initialize OLED
   display.init();
@@ -87,12 +97,13 @@ void wy_v3_node_master_setup() {
   display.clear();
   debugMessage("Display initialised");
   debugMessage("LoRa initialised");
-  debugMessage("Frequency:" + String(FREQUENCY, 1) + "MHz");
-  debugMessage("Bandwidth:" + String(BANDWIDTH, 1) + "kHz");
+  debugMessage("FQ:" + String(FREQUENCY, 1) + "MHz " + "BW:" + String(BANDWIDTH, 1) + "kHz");
   debugMessage("Spread:" + String(SPREADING_FACTOR) + " TXP:" + String(TRANSMIT_POWER) + "dBm");
   BatteryStatus batteryStatus = getBatteryStatus();
   uint8_t batteryLevel = batteryStatus.percentage;
   uint16_t voltage = (uint16_t)(batteryStatus.voltage * 100);
+  String macAddress = WiFi.macAddress();
+  debugMessage("MAC:" + macAddress );
   debugMessage("Battery: " + String(batteryLevel) + "% " + String(voltage / 100.0, 2) + "V");
   currentLine = 0;  // Reset the screen for a refresh will delay for pause time on first loop before TX and display will refresh on current line reset
 
@@ -100,7 +111,11 @@ void wy_v3_node_master_setup() {
   pinMode(PRG_BTN, INPUT_PULLUP);  // PRG button setup
 
   // Start receiving
-  RADIOLIB_OR_HALT(radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF));
+  #if defined(LORA_DEBUG)
+    RADIOLIB_OR_HALT(radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF));
+  #else
+    radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF);
+  #endif
 }
 
 void wy_v3_node_master_loop() {
@@ -140,7 +155,11 @@ void wy_v3_node_master_loop() {
     lastSendTime = millis();
 
     radio.setDio1Action(rx);
-    RADIOLIB_OR_HALT(radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF));
+    #if defined(LORA_DEBUG)
+      RADIOLIB_OR_HALT(radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF));
+    #else
+      radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF);
+    #endif
   }
 
   // If a packet was received, display it and the RSSI and SNR

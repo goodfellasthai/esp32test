@@ -11,6 +11,8 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+// For MAC address and ESP Now
+#include <WiFi.h>
 /*// LoRaV3 Pins
 //V3
 // 'PRG' Button
@@ -82,11 +84,16 @@ String outgoing;              // outgoing message
 String monitormsg;            // use for message to monitor on serial or display
 
 int msgCount = 0;            // count of outgoing messages
+
 // Adress info
-byte localAddress = 0xBB;     // address of base station
-//byte localAddress = 0xDD;     // address of drone device
-//byte localAddress = 0xCC;     // address of node device
-byte destination = 0xFF;      // destination to send to FF is broadcast to everyone or can specify specific address
+# if defined(WY_NODE_MASTER)
+  byte localAddress = 0xBB;     // address of base station
+#elif defined(WY_NODE_DRONE)
+  byte localAddress = 0xDD;     // address of drone device
+#elif defined(WY_NODE_01)
+  byte localAddress = 0xCC;     // address of node device
+#endif
+byte destination = 0xFF;      // destination to send to FF is broadcast to everyone default for all devices braodcast to nodes in range
 
 long lastSendTime = 0;        // Last send time
 uint64_t tx_time;             // Transaction time
@@ -98,11 +105,14 @@ int interval = PAUSE * 1000;  // converts the pause time to milliseconds
 // Screen timeout stuff
 bool isScreenOn = true;  // Screen state
 unsigned long lastActivityTime = 0;  // Last time the screen was active
-const unsigned long SCREEN_TIMEOUT = 20000;  // 20 seconds timeout
+const unsigned long SCREEN_TIMEOUT = 30000;  // 30 seconds timeout
 #define PRG_BTN 0  // GPIO0 for PRG button
 #define POWER_LONGPRESS 3000 // Must longpress PRG 3 seconds to shutdown, V2 3000 works but needs to be shorted on V3 to avoid bootmode
 
 void wy_v2_node_master_setup() {
+
+    // Initialize Wi-Fi in Station mode (required for getting MAC)
+    WiFi.mode(WIFI_STA);
 
     // V2 LED Stuff
     pinMode(LED_PIN, OUTPUT);
@@ -140,9 +150,10 @@ void wy_v2_node_master_setup() {
     display.clearDisplay();
     debugMessage("Disp. Init.");
     debugMessage("LoRa Init");
-    debugMessage("Frequency:" + String(FREQUENCY, 1) + "MHz");
-    debugMessage("Bandwidth:" + String(BANDWIDTH, 1) + "kHz");
+    debugMessage("F:" + String(FREQUENCY, 1) + "MHz " + "B:" + String(BANDWIDTH, 1) + "kHz");
     debugMessage("Spread:" + String(SPREADING_FACTOR) + " TXP:" + String(TRANSMIT_POWER) + "dBm");
+    String macAddress = WiFi.macAddress();
+    debugMessage("MAC:" + macAddress );
     debugMessage("Battery: " + String(batteryText) + "% " + String(voltageText) );
     currentLine = 0;  // Reset the screen for a refresh will delay for pause time on first loop before TX and display will refresh on current line reset
 
