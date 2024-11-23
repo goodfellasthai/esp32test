@@ -408,27 +408,34 @@ void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 //    dataReceivedFlag = true;
 //}
 void onDataRecv(const esp_now_recv_info *info, const uint8_t *data, int dataLen) {
-    // Extract MAC address from the `info` struct
-    const uint8_t *macAddr = info->src_addr;
-
-    // Process the received data
+    // Print the MAC address of the sender
     Serial.print("Received data from: ");
     for (int i = 0; i < 6; i++) {
-        Serial.printf("%02X", macAddr[i]);
+        Serial.printf("%02X", info->src_addr[i]);
         if (i < 5) Serial.print(":");
     }
     Serial.println();
 
+    // Print the data length
     Serial.print("Data length: ");
     Serial.println(dataLen);
 
-    // Example: Print the received data
+    // Print the raw data
+    Serial.print("Raw data: ");
     for (int i = 0; i < dataLen; i++) {
         Serial.printf("%02X ", data[i]);
     }
     Serial.println();
-    dataReceivedFlag = true;
+
+    // Validate the length and copy data
+    if (dataLen == sizeof(SensorData)) {
+        memcpy(&receivedData, data, sizeof(SensorData));
+        dataReceivedFlag = true;  // Set flag to indicate new data
+    } else {
+        Serial.println("Error: Data length mismatch!");
+    }
 }
+
 // Initialize ESP-NOW
 void initEspNow(const uint8_t *peerAddress) {
     WiFi.mode(WIFI_STA); // Ensure Wi-Fi is in Station mode

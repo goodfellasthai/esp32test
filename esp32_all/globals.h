@@ -9,10 +9,12 @@
 #ifndef ESPN_SENSOR_H
 #define ESPN_SENSOR_H
 // Define the structure for sensor data
+#pragma pack(push, 1)  // Align structure to 1-byte boundaries
 typedef struct {
     float gps_latitude;
     float gps_longitude;
     float altitude;
     float pressure;
 } SensorData;
+#pragma pack(pop)
 #endif // ESPN_SENSOR_H
