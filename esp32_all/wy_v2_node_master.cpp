@@ -55,6 +55,11 @@
 #define OLED_SCL 15 // LoRaV2
 //#define OLED_SCL 18 // LoRaV3
 
+// Debug settings
+//#define LORA_DEBUG
+//#define BATTERY_DEBUG
+#define ESPNOW_DEBUG
+
 // Create an SSD1306 object for I2C
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 String messageBuffer[MAX_LINES]; // Buffer to store lines
@@ -95,7 +100,7 @@ bool isScreenOn = true;  // Screen state
 unsigned long lastActivityTime = 0;  // Last time the screen was active
 const unsigned long SCREEN_TIMEOUT = 20000;  // 20 seconds timeout
 #define PRG_BTN 0  // GPIO0 for PRG button
-#define POWER_LONGPRESS 3000 // Must longpress PRG 3 seconds to shutdown
+#define POWER_LONGPRESS 3000 // Must longpress PRG 3 seconds to shutdown, V2 3000 works but needs to be shorted on V3 to avoid bootmode
 
 void wy_v2_node_master_setup() {
 
@@ -246,21 +251,23 @@ void sendMessage(String outgoing) {
     // Debug output
     // V3: if (_radiolib_status == RADIOLIB_ERR_NONE) {
     if (result) {
-        Serial.println("Payload Debug:");
-        Serial.print("Hex: ");
-        for (size_t i = 0; i < len + 7; i++) {
-            Serial.printf("%02X ", payload[i]); // Print as hex
-        }
-        Serial.println();
-        Serial.print("ASCII: ");
-        for (size_t i = 0; i < len + 7; i++) {
-            if (payload[i] >= 32 && payload[i] <= 126) {
-                Serial.print((char)payload[i]); // Printable ASCII
-            } else {
-                Serial.print('.');
-            }
-        }
-        Serial.printf(" [Battery: %d%%, Voltage: %.2fV]\n", batteryLevel, voltage / 100.0); // Display battery data
+        #if defined(LORA_DEBUG)
+          Serial.println("Payload Debug:");
+          Serial.print("Hex: ");
+          for (size_t i = 0; i < len + 7; i++) {
+              Serial.printf("%02X ", payload[i]); // Print as hex
+          }
+          Serial.println();
+          Serial.print("ASCII: ");
+          for (size_t i = 0; i < len + 7; i++) {
+              if (payload[i] >= 32 && payload[i] <= 126) {
+                  Serial.print((char)payload[i]); // Printable ASCII
+              } else {
+                  Serial.print('.');
+              }
+          }
+          Serial.printf(" [Transmitted Battery Info: %d%%, Voltage: %.2fV]\n", batteryLevel, voltage / 100.0); // Display battery data
+        #endif
         monitormsg = "TX[" + String(msgCount) + "]:OK:" + String((int)tx_time) + "ms";
     } else {
         monitormsg = "TX [" + String(msgCount) + "] Fail";
@@ -332,18 +339,20 @@ void onReceive(int packetSize) {
         return;
     }
 
-    // Debugging: Display parsed packet details
-    Serial.println("=== Received Packet ===");
-    Serial.println("From: 0x" + String(sender, HEX));
-    Serial.println("To: 0x" + String(recipient, HEX));
-    Serial.println("Message ID: " + String(incomingMsgId));
-    Serial.println("Message Length: " + String(incomingLength));
-    Serial.println("Battery Level: " + String(batteryLevel) + "%");
-    Serial.println("Voltage: " + String(voltage / 100.0, 2) + "V");
-    Serial.println("Message: " + incoming);
-    Serial.println("RSSI: " + String(LoRa.packetRssi()) + " dBm");
-    Serial.println("SNR: " + String(LoRa.packetSnr()) + " dB");
-    Serial.println("========================\n");
+    #if defined(LORA_DEBUG)
+      // Debugging: Display parsed packet details
+      Serial.println("=== Received Packet ===");
+      Serial.println("From: 0x" + String(sender, HEX));
+      Serial.println("To: 0x" + String(recipient, HEX));
+      Serial.println("Message ID: " + String(incomingMsgId));
+      Serial.println("Message Length: " + String(incomingLength));
+      Serial.println("Battery Level: " + String(batteryLevel) + "%");
+      Serial.println("Voltage: " + String(voltage / 100.0, 2) + "V");
+      Serial.println("Message: " + incoming);
+      Serial.println("RSSI: " + String(LoRa.packetRssi()) + " dBm");
+      Serial.println("SNR: " + String(LoRa.packetSnr()) + " dB");
+      Serial.println("========================\n");
+    #endif
 }
 
 // Send debug to serial and display
@@ -439,10 +448,12 @@ BatteryStatus getBatteryStatus() {
     // Calculate actual battery voltage
     float batteryVoltage = pinVoltage * VOLTAGE_DIVIDER_RATIO;
     // Debugging
-    Serial.println("=== Battery Debugging ===");
-    Serial.println("Raw ADC Value: " + String(rawAdc));
-    Serial.println("Pin Voltage: " + String(pinVoltage, 2) + " V");
-    Serial.println("Calculated Battery Voltage: " + String(batteryVoltage, 2) + " V");
+    #if defined(BATTERY_DEBUG)
+      Serial.println("=== Battery Debugging ===");
+      Serial.println("Raw ADC Value: " + String(rawAdc));
+      Serial.println("Pin Voltage: " + String(pinVoltage, 2) + " V");
+      Serial.println("Calculated Battery Voltage: " + String(batteryVoltage, 2) + " V");
+    #endif
     // Calculate battery percentage
     uint8_t percentage = 0;
     if (batteryVoltage >= BATTERY_MAX_VOLTAGE) {

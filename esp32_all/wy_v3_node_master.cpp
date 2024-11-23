@@ -31,6 +31,11 @@
 // US: Up to 20-30 dBm, depending on specific frequency bands.
 #define TRANSMIT_POWER      0
 
+// Debug settings
+//#define LORA_DEBUG
+//#define BATTERY_DEBUG
+#define ESPNOW_DEBUG
+
 // OLED Stuff
 #define MAX_LINES 6      // Maximum number of lines visible on the display
 String messageBuffer[MAX_LINES]; // Buffer to store lines
@@ -56,7 +61,7 @@ bool isScreenOn = true;  // Screen state
 unsigned long lastActivityTime = 0;  // Last time the screen was active
 const unsigned long SCREEN_TIMEOUT = 20000;  // 20 seconds timeout
 #define PRG_BTN 0  // GPIO0 for PRG button
-#define POWER_LONGPRESS 3000 // Must longpress PRG 3 seconds to shutdown
+#define POWER_LONGPRESS 1500 // Must longpress PRG 1.5 seconds on v3 to poweroff so doesnt go into bootmode (Still goes int obootmode)
 
 void wy_v3_node_master_setup() {
   heltec_setup();
@@ -185,21 +190,23 @@ void sendMessage(String outgoing) {
 
     // Debug output
     if (_radiolib_status == RADIOLIB_ERR_NONE) {
-        Serial.println("Payload Debug:");
-        Serial.print("Hex: ");
-        for (size_t i = 0; i < len + 7; i++) {
-            Serial.printf("%02X ", payload[i]); // Print as hex
-        }
-        Serial.println();
-        Serial.print("ASCII: ");
-        for (size_t i = 0; i < len + 7; i++) {
-            if (payload[i] >= 32 && payload[i] <= 126) {
-                Serial.print((char)payload[i]); // Printable ASCII
-            } else {
-                Serial.print('.');
-            }
-        }
-        Serial.printf(" [Battery: %d%%, Voltage: %.2fV]\n", batteryLevel, voltage / 100.0); // Display battery data
+        #if defined(LORA_DEBUG)
+          Serial.println("Payload Debug:");
+          Serial.print("Hex: ");
+          for (size_t i = 0; i < len + 7; i++) {
+              Serial.printf("%02X ", payload[i]); // Print as hex
+          }
+          Serial.println();
+          Serial.print("ASCII: ");
+          for (size_t i = 0; i < len + 7; i++) {
+              if (payload[i] >= 32 && payload[i] <= 126) {
+                  Serial.print((char)payload[i]); // Printable ASCII
+              } else {
+                  Serial.print('.');
+              }
+          }
+          Serial.printf(" [Transmitted Battery Info: %d%%, Voltage: %.2fV]\n", batteryLevel, voltage / 100.0); // Display battery data
+        #endif
         monitormsg = "TX[" + String(msgCount) + "]:OK:" + String((int)tx_time) + "ms";
     } else {
         Serial.printf("Fail (%d)\n", _radiolib_status);
@@ -251,12 +258,14 @@ void onReceive(String rxdata) {
     }
 
     // Debug output
-    debugMessage("From: 0x" + String(sender, HEX));
-    debugMessage("To: 0x" + String(recipient, HEX));
-    debugMessage("ID: " + String(msgId));
-    debugMessage("Battery Level: " + String(batteryLevel) + "%");
-    debugMessage("Voltage: " + String(voltage / 100.0, 2) + "V");
-    debugMessage("Message: " + message);
+    #if defined(LORA_DEBUG)
+      debugMessage("From: 0x" + String(sender, HEX));
+      debugMessage("To: 0x" + String(recipient, HEX));
+      debugMessage("ID: " + String(msgId));
+      debugMessage("Battery Level: " + String(batteryLevel) + "%");
+      debugMessage("Voltage: " + String(voltage / 100.0, 2) + "V");
+      debugMessage("Message: " + message);
+    #endif
 }
 
 
@@ -324,10 +333,12 @@ BatteryStatus getBatteryStatus() {
     // Calculate battery voltage
     float batteryVoltage = pinVoltage * VOLTAGE_DIVIDER_RATIO;
     // Debugging
-    Serial.println("=== Battery Debugging ===");
-    Serial.println("Raw ADC Value: " + String(rawAdc));
-    Serial.println("Pin Voltage: " + String(pinVoltage, 2) + " V");
-    Serial.println("Calculated Battery Voltage: " + String(batteryVoltage, 2) + " V");
+    #if defined(BATTERY_DEBUG)
+      Serial.println("=== Battery Debugging ===");
+      Serial.println("Raw ADC Value: " + String(rawAdc));
+      Serial.println("Pin Voltage: " + String(pinVoltage, 2) + " V");
+      Serial.println("Calculated Battery Voltage: " + String(batteryVoltage, 2) + " V");
+    #endif
     // Calculate battery percentage
     uint8_t batteryPercentage;
     if (batteryVoltage <= BATTERY_MIN_VOLTAGE) {
