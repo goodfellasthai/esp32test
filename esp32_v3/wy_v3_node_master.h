@@ -1,5 +1,6 @@
 #pragma once
 #include "wyconfig.h"
+// Globals always needs included for the structs
 #include "../master/globals.h"
 
 void wy_v3_node_master_setup();

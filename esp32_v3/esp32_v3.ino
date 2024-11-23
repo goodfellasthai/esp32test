@@ -28,10 +28,5 @@ void loop() {
     #if defined(WY_NODE_01) || defined(WY_NODE_02)
        wy_v3_node_master_loop();
     #endif
-  #elif defined(WYMAN_M5STICKCP2)
-    wy_cp2_loop();
-  #elif defined(WYMAN_ESP32C6147)
-    // Placeholder
   #endif
-
 }
