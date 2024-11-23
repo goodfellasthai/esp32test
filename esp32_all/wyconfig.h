@@ -41,9 +41,9 @@
 
   //// HARDWARE NAMES
   #if defined(WYMAN_LORAV2)
-    #define HARDWARE_NAME "LoRa ESP32 V2 915mhz 0.96 OLED 64x128"
+    #define HARDWARE_NAME "LoRa ESP32 V2 Semtech SX1276 915mhz 0.96 OLED 64x128"
   #elif defined(WYMAN_LORAV3)
-    #define HARDWARE_NAME "LoRa ESP32-S3 V3 433mhz 0.96 OLED 64x128"
+    #define HARDWARE_NAME "LoRa ESP32-S3 V3 Semtech SX1278 433mhz 0.96 OLED 64x128"
   #elif defined(WYMAN_M5STICKCP2)
     #define HARDWARE_NAME "M5StickC Plus2 1.14 TFT 135x240"  
   #elif defined(WYMAN_ESP32C6147)

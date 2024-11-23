@@ -67,7 +67,7 @@ const unsigned long SCREEN_TIMEOUT = 30000;  // 30 seconds timeout
 
 // ESP-NOW Stuff
 SensorData espnData = {51.5074, -0.1278, 30.0, 1013.25}; // Sample data
-unsigned long espnLastSendTime = 0;
+unsigned long espnLastSendTime = 0; // Can use when we seperate out but ESPN works on LoRa PAUSE time
 static SensorData receivedData;
 static bool dataReceivedFlag = false;
 
@@ -157,13 +157,28 @@ void wy_v2_node_master_loop() {
 
     // Check if it's time to send a message as the first message will always wait the pause time as no last send time
     if (millis() - loraLastSendTime > interval) {
+        // Send ESP-NOW first
+        sendEspNowData(&espnData);
+
+        // Then send LoRa
         String message = "Transmit test message from LoRaV2";  
         analogWrite(LED_PIN, 128);  // 50% brightness   
         sendMessage(message);   // Send the message
         analogWrite(LED_PIN, 0);    // Turn off
     }
 
-    // parse for a packet, and call onReceive with the result:
+    // ESPN Receive
+    // Check for received data
+    if (isDataReceived()) {
+        SensorData received = getReceivedData();
+        Serial.println("Received Data:");
+        Serial.print("GPS Latitude: "); Serial.println(received.gps_latitude);
+        Serial.print("GPS Longitude: "); Serial.println(received.gps_longitude);
+        Serial.print("Altitude: "); Serial.println(received.altitude);
+        Serial.print("Pressure: "); Serial.println(received.pressure);
+    }
+
+    // LoRa Receive
     onReceive(LoRa.parsePacket());
 
 }
@@ -418,25 +433,39 @@ void onDataRecv(const esp_now_recv_info *info, const uint8_t *data, int dataLen)
 }
 // Initialize ESP-NOW
 void initEspNow(const uint8_t *peerAddress) {
-    WiFi.mode(WIFI_STA);
+    WiFi.mode(WIFI_STA); // Ensure Wi-Fi is in Station mode
     if (esp_now_init() != ESP_OK) {
         Serial.println("Error initializing ESP-NOW");
         return;
     }
+
+    // Register callbacks for send and receive
     esp_now_register_send_cb(onDataSent);
     esp_now_register_recv_cb(onDataRecv);
+
+    // Add peer for broadcasting
+    Serial.print("Adding peer with address: ");
+    for (int i = 0; i < 6; i++) {
+        Serial.printf("%02X", peerAddress[i]);
+        if (i < 5) Serial.print(":");
+    }
+    Serial.println();
+    
     esp_now_peer_info_t peerInfo = {};
-    memcpy(peerInfo.peer_addr, peerAddress, 6);
-    peerInfo.channel = 0;
-    peerInfo.encrypt = false;
+    memcpy(peerInfo.peer_addr, peerAddress, 6); // Use the provided peer address
+    peerInfo.channel = 0;  // Set to 0 for default Wi-Fi channel
+    peerInfo.encrypt = false; // Disable encryption
 
     if (esp_now_add_peer(&peerInfo) != ESP_OK) {
         Serial.println("Failed to add peer");
+    } else {
+        Serial.println("Peer added successfully");
     }
 }
 // Send data using ESP-NOW
 void sendEspNowData(SensorData *data) {
-    esp_err_t result = esp_now_send(NULL, (uint8_t *)data, sizeof(SensorData));
+    uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)data, sizeof(SensorData));
     if (result == ESP_OK) {
         Serial.println("Data sent successfully");
     } else {

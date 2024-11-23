@@ -56,7 +56,7 @@ const unsigned long SCREEN_TIMEOUT = 30000;  // 30 seconds timeout
 
 // ESP-NOW Stuff
 SensorData espnData = {51.5074, -0.1278, 30.0, 1013.25}; // Sample data
-unsigned long espnLastSendTime = 0;
+unsigned long espnLastSendTime = 0; // Can use when we seperate out but ESPN works on LoRa PAUSE time
 static SensorData receivedData;
 static bool dataReceivedFlag = false;
 
@@ -139,15 +139,15 @@ void wy_v3_node_master_loop() {
 
     
     if ( (millis() - loraLastSendTime) > (PAUSE * 1000) )  {
-      //both.printf("TX [%s] ", String(msgCount).c_str());
-      radio.clearDio1Action();
+      // Send ESP-NOW first
+      sendEspNowData(&espnData);
 
+      // Then send LoRa
+      radio.clearDio1Action();
       String message = "Transmit test message LoRaV3";              
       heltec_led(50); // 50% brightness is plenty for this LED
       sendMessage(message);
       heltec_led(0);
-
-      loraLastSendTime = millis();
 
       radio.setDio1Action(rx);
       #if defined(LORA_DEBUG)
@@ -157,7 +157,18 @@ void wy_v3_node_master_loop() {
       #endif
     }
 
-    // If a packet was received, display it and the RSSI and SNR
+    // ESPN Receive
+    // Check for received data
+    if (isDataReceived()) {
+        SensorData received = getReceivedData();
+        Serial.println("Received Data:");
+        Serial.print("GPS Latitude: "); Serial.println(received.gps_latitude);
+        Serial.print("GPS Longitude: "); Serial.println(received.gps_longitude);
+        Serial.print("Altitude: "); Serial.println(received.altitude);
+        Serial.print("Pressure: "); Serial.println(received.pressure);
+    }
+
+    // LoRa Receive
     if (rxFlag) {
       rxFlag = false;
       //radio.readData(rxdata);
@@ -201,6 +212,7 @@ void sendMessage(String outgoing) {
     tx_time = millis();
     int16_t status = radio.transmit(payload, len + 7); // Transmit header + battery data + payload
     tx_time = millis() - tx_time;
+    loraLastSendTime = millis();                  // Update the last send time
 
     // Debug output
     if (_radiolib_status == RADIOLIB_ERR_NONE) {
@@ -419,31 +431,47 @@ void onDataRecv(const esp_now_recv_info *info, const uint8_t *data, int dataLen)
 }
 // Initialize ESP-NOW
 void initEspNow(const uint8_t *peerAddress) {
-    WiFi.mode(WIFI_STA);
+    WiFi.mode(WIFI_STA); // Ensure Wi-Fi is in Station mode
     if (esp_now_init() != ESP_OK) {
         Serial.println("Error initializing ESP-NOW");
         return;
     }
+
+    // Register callbacks for send and receive
     esp_now_register_send_cb(onDataSent);
     esp_now_register_recv_cb(onDataRecv);
+
+    // Add peer for broadcasting
+    Serial.print("Adding peer with address: ");
+    for (int i = 0; i < 6; i++) {
+        Serial.printf("%02X", peerAddress[i]);
+        if (i < 5) Serial.print(":");
+    }
+    Serial.println();
+
+    // Add peer for broadcasting
     esp_now_peer_info_t peerInfo = {};
-    memcpy(peerInfo.peer_addr, peerAddress, 6);
-    peerInfo.channel = 0;
-    peerInfo.encrypt = false;
+    memcpy(peerInfo.peer_addr, peerAddress, 6); // Use the provided peer address
+    peerInfo.channel = 0;  // Set to 0 for default Wi-Fi channel
+    peerInfo.encrypt = false; // Disable encryption
 
     if (esp_now_add_peer(&peerInfo) != ESP_OK) {
         Serial.println("Failed to add peer");
+    } else {
+        Serial.println("Peer added successfully");
     }
 }
 // Send data using ESP-NOW
 void sendEspNowData(SensorData *data) {
-    esp_err_t result = esp_now_send(NULL, (uint8_t *)data, sizeof(SensorData));
+    uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)data, sizeof(SensorData));
     if (result == ESP_OK) {
         Serial.println("Data sent successfully");
     } else {
         Serial.println("Error sending data");
     }
 }
+
 // Check if data is received
 bool isDataReceived() {
     return dataReceivedFlag;
