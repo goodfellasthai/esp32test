@@ -11,28 +11,24 @@
   //#define WYMAN_M5STICKCP2
   //#define WYMAN_ESP32C6147
 
-  //// LORA NODE PURPOSE (COMMENT OUT AS NEEDED)
-  #define WY_NODE_MASTER
-  //#define WY_NODE_DRONE
-  //#define WY_NODE_01
+  //// LORA NODE NUMBER (COMMENT OUT AS NEEDED)
+  #define WY_NODE_01
+  //#define WY_NODE_02
+
+  //// LORA DEBUG OPTIONS (COMMENT OUT AS NEEDED)
+  //#define LORA_DEBUG
+  //#define BATTERY_DEBUG
+  #define ESPNOW_DEBUG
 
   //// GLOBAL INCLUDES BASED ON BOARD ALWAYS INCLUDE ARDUINO FOR INO SERIAL OR OTHER FUNCS
   #include <Arduino.h>
   #if defined(WYMAN_LORAV2)
-    #if defined(WY_NODE_MASTER)
+    #if defined(WY_NODE_01) || defined(WY_NODE_02)
        #include "wy_v2_node_master.h"
-    #elif defined(WY_NODE_DRONE)
-       #include "lorav2/wy_v2_node_drone.h"
-    #elif defined(WY_NODE_01)
-       #include "lorav2/wy_v2_node_01.h"
     #endif
   #elif defined(WYMAN_LORAV3)
-    #if defined(WY_NODE_MASTER)
+    #if defined(WY_NODE_01) || defined(WY_NODE_02)
        #include "wy_v3_node_master.h"
-    #elif defined(WY_NODE_DRONE)
-       #include "lorav3/wy_v3_node_drone.h"
-    #elif defined(WY_NODE_01)
-       #include "lorav3/wy_v3_node_01.h"
     #endif
   #elif defined(WYMAN_M5STICKCP2)
     #include "m5/wy_cp2.h"
@@ -45,9 +41,9 @@
 
   //// HARDWARE NAMES
   #if defined(WYMAN_LORAV2)
-    #define HARDWARE_NAME "LoRa ESP32 V2 0.96 OLED 64x128"
+    #define HARDWARE_NAME "LoRa ESP32 V2 915mhz 0.96 OLED 64x128"
   #elif defined(WYMAN_LORAV3)
-    #define HARDWARE_NAME "LoRa ESP32 V3 0.96 OLED 64x128"
+    #define HARDWARE_NAME "LoRa ESP32-S3 V3 433mhz 0.96 OLED 64x128"
   #elif defined(WYMAN_M5STICKCP2)
     #define HARDWARE_NAME "M5StickC Plus2 1.14 TFT 135x240"  
   #elif defined(WYMAN_ESP32C6147)
@@ -56,13 +52,29 @@
 
   //// DEVICE DEFINITIONS
   #if defined(WYMAN_LORAV2)
-    #define BUTTON_PIN 0
-    #define BATTERY_PIN 37 // For v2
-
+    #if defined(WY_NODE_01)
+      #define MAC_ADDRESS {0xA0, 0xDD, 0x6C, 0x98, 0x13, 0xF0}
+      #define LOCAL_ADDRESS 0x21
+      #define BC_LORA 0xFF
+      #define BC_ESPN {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
+    #elif defined(WY_NODE_02)
+      #define MAC_ADDRESS {0x22, 0x22, 0x22, 0x22, 0x22, 0x22}
+      #define LOCAL_ADDRESS 0x22
+      #define BC_LORA 0xFF
+      #define BC_ESPN {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
+    #endif
   #elif defined(WYMAN_LORAV3)
-    #define BUTTON_PIN 0
-    #define BATTERY_PIN 13 // For v3 if doesnt work with battery we can try 37
-
+    #if defined(WY_NODE_01)
+      #define MAC_ADDRESS {0x64, 0xE8, 0x33, 0x69, 0x09, 0xF8}
+      #define LOCAL_ADDRESS 0x31
+      #define BC_LORA 0xFF
+      #define BC_ESPN {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
+    #elif defined(WY_NODE_02)
+      #define MAC_ADDRESS {0x32, 0x32, 0x32, 0x32, 0x32, 0x32}
+      #define LOCAL_ADDRESS 0x32
+      #define BC_LORA 0xFF
+      #define BC_ESPN {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
+    #endif
   #elif defined(WYMAN_M5STICKCP2)
     // Placeholder
 
@@ -71,5 +83,12 @@
 
   //// COMPLETE DEVICE DEFINTION
   #endif
+
+  // MAC DIRECTORY
+  #define V2_NODE_01 {0xA0, 0xDD, 0x6C, 0x98, 0x13, 0xF0}
+  #define V2_NODE_02 {0x22, 0x22, 0x22, 0x22, 0x22, 0x22}
+  #define V3_NODE_01 {0x64, 0xE8, 0x33, 0x69, 0x09, 0xF8}
+  #define V3_NODE_02 {0x32, 0x32, 0x32, 0x32, 0x32, 0x32}
+
 //// COMPLETED MAIN CONFIGURATION 
 #endif

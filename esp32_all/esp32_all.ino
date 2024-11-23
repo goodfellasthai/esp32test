@@ -10,20 +10,12 @@ void setup() {
   Serial.println("Serial Initialized for " + String(HARDWARE_NAME));
 
   #if defined(WYMAN_LORAV2)
-    #if defined(WY_NODE_MASTER)
+    #if defined(WY_NODE_01) || defined(WY_NODE_02)
        wy_v2_node_master_setup();   
-    #elif defined(WY_NODE_DRONE)
-       wy_v2_node_drone_setup();
-    #elif defined(WY_NODE_01)
-       wy_v2_node_01_setup();
     #endif
   #elif defined(WYMAN_LORAV3)
-    #if defined(WY_NODE_MASTER)
+    #if defined(WY_NODE_01) || defined(WY_NODE_02)
        wy_v3_node_master_setup();
-    #elif defined(WY_NODE_DRONE)
-       wy_v3_node_drone_setup();
-    #elif defined(WY_NODE_01)
-       wy_v3_node_01_setup();
     #endif
   #elif defined(WYMAN_M5STICKCP2)
     wy_cp2_setup();
@@ -35,20 +27,12 @@ void setup() {
 
 void loop() {
   #if defined(WYMAN_LORAV2)
-    #if defined(WY_NODE_MASTER)
+    #if defined(WY_NODE_01) || defined(WY_NODE_02)
        wy_v2_node_master_loop();   
-    #elif defined(WY_NODE_DRONE)
-       wy_v2_node_drone_loop();
-    #elif defined(WY_NODE_01)
-       wy_v2_node_01_loop();
     #endif
   #elif defined(WYMAN_LORAV3)
-    #if defined(WY_NODE_MASTER)
+    #if defined(WY_NODE_01) || defined(WY_NODE_02)
        wy_v3_node_master_loop();
-    #elif defined(WY_NODE_DRONE)
-       wy_v3_node_drone_loop();
-    #elif defined(WY_NODE_01)
-       wy_v3_node_01_loop(); 
     #endif
   #elif defined(WYMAN_M5STICKCP2)
     wy_cp2_loop();
