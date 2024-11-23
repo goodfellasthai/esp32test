@@ -6,8 +6,8 @@
   #define ENGLISH_POTATO
 
   //// BOARD TARGETS (COMMENT OUT AS NEEDED)
-  //#define WYMAN_LORAV2
-  #define WYMAN_LORAV3
+  #define WYMAN_LORAV2
+  //#define WYMAN_LORAV3
   //#define WYMAN_M5STICKCP2
   //#define WYMAN_ESP32C6147
 
