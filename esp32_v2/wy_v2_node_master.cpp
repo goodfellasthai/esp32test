@@ -71,7 +71,6 @@ unsigned long espnLastSendTime = 0; // Can use when we seperate out but ESPN wor
 static SensorData receivedData;
 static bool dataReceivedFlag = false;
 
-
 void wy_v2_node_master_setup() {
 
     // ESP-NOW Stuff

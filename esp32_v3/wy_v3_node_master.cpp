@@ -1,7 +1,6 @@
 #include "wy_v3_node_master.h"
 
 #if defined(WYMAN_LORAV3)
-
 #pragma once
 
 // Turns the 'PRG' button into the power button, long press is off 

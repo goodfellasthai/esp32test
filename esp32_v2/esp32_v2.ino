@@ -1,5 +1,4 @@
 #pragma once
-// Main configuration file only required once and covered by pragma once
 #include "wyconfig.h"
 
 void setup() {
@@ -17,12 +16,7 @@ void setup() {
     #if defined(WY_NODE_01) || defined(WY_NODE_02)
        wy_v3_node_master_setup();
     #endif
-  #elif defined(WYMAN_M5STICKCP2)
-    wy_cp2_setup();
-  #elif defined(WYMAN_ESP32C6147)
-    // Placeholder
   #endif
-
 }
 
 void loop() {
