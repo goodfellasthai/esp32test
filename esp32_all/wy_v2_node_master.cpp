@@ -87,7 +87,20 @@ long lastSendTime = 0;        // Last send time
 uint64_t tx_time;             // Transaction time
 int interval = PAUSE * 1000;  // converts the pause time to milliseconds
 
+// V2 LED stuff
+#define LED_PIN 25  // GPIO for onboard LED
+
+// Screen timeout stuff
+bool isScreenOn = true;  // Screen state
+unsigned long lastActivityTime = 0;  // Last time the screen was active
+const unsigned long SCREEN_TIMEOUT = 20000;  // 20 seconds timeout
+#define PRG_BTN 0  // GPIO0 for PRG button
+#define POWER_LONGPRESS 3000 // Must longpress PRG 3 seconds to shutdown
+
 void wy_v2_node_master_setup() {
+
+    // V2 LED Stuff
+    pinMode(LED_PIN, OUTPUT);
 
     // Set up display
     // Set custom SDA and SCL pins for I2C
@@ -127,23 +140,57 @@ void wy_v2_node_master_setup() {
     debugMessage("Spread:" + String(SPREADING_FACTOR) + " TXP:" + String(TRANSMIT_POWER) + "dBm");
     debugMessage("Battery: " + String(batteryText) + "% " + String(voltageText) );
     currentLine = 0;  // Reset the screen for a refresh will delay for pause time on first loop before TX and display will refresh on current line reset
+
+    // Screen timeout stuff
+    pinMode(PRG_BTN, INPUT_PULLUP);  // PRG button setup
 }
 
 void wy_v2_node_master_loop() {
 
+    // Screen timeout stuff
+    static unsigned long buttonPressTime = 0;  // Tracks button press duration
+    static bool buttonHeld = false;           // Tracks if the button is being held
+    bool buttonState = digitalRead(PRG_BTN);
+    // Long press detection (power off)
+    if (buttonState == LOW) {  // Button is pressed
+        if (buttonPressTime == 0) {
+            buttonPressTime = millis();  // Start tracking press time
+        } else if (!buttonHeld && millis() - buttonPressTime > POWER_LONGPRESS) {  // Long press detected
+            buttonHeld = true;  // Mark the button as held
+            Serial.println("Long press detected! Powering off...");
+            heltec_power_off();  // Power off the device and put into deep sleep
+        }
+    } else {  // Button is released
+        if (buttonPressTime > 0 && !buttonHeld) {  // Short press detected
+            if (millis() - buttonPressTime < POWER_LONGPRESS) {
+                Serial.println("Short press detected! Toggling screen...");
+                toggleScreen();  // Toggle screen on/off
+            }
+        }
+        buttonPressTime = 0;  // Reset press time
+        buttonHeld = false;   // Reset button held state
+    }
+    // Screen timeout logic
+    if (isScreenOn && millis() - lastActivityTime > SCREEN_TIMEOUT) {
+        Serial.println("Screen timeout! Turning off screen...");
+        turnScreenOff();
+    }
+
     // Check if it's time to send a message as the first message will always wait the pause time as no last send time
     if (millis() - lastSendTime > interval) {
         String message = "Transmit test message LoRaV2";  
-        tx_time = millis();             // Record the start time
-        sendMessage(message);                           // Send the message
-        tx_time = millis() - tx_time;  // Calculate duration
+        //tx_time = millis();             // Record the start time
+        analogWrite(LED_PIN, 128);  // 50% brightness   
+        sendMessage(message);   // Send the message
+        analogWrite(LED_PIN, 0);    // Turn off
+        //tx_time = millis() - tx_time;  // Calculate duration
         // Send the monitor message to serial and display
-        monitormsg = "TX[" + String(msgCount) + "]:OK:" + String((int)tx_time) + "ms";
+        //monitormsg = "TX[" + String(msgCount) + "]:OK:" + String((int)tx_time) + "ms";
         //Serial.println(monitormsg);   // Debug TX
         //display.println(monitormsg);  // Display TX dont use F as in setup that is fixed for flash this is dynamic could also use sprintf
         ////debugMessage(monitormsg); // Send to serial and display
         /////display.display();                        // Send buffer to the display, required for OLED
-        lastSendTime = millis();                  // Update the last send time
+        //lastSendTime = millis();                  // Update the last send time
         //interval = random(2000) + 1000;         // Set a random interval between 2-3 seconds
     }
 
@@ -194,7 +241,8 @@ void sendMessage(String outgoing) {
     // End packet and transmit
     bool result = LoRa.endPacket();
     tx_time = millis() - tx_time;
-    
+    lastSendTime = millis();                  // Update the last send time
+   
     // Debug output
     // V3: if (_radiolib_status == RADIOLIB_ERR_NONE) {
     if (result) {
@@ -406,5 +454,31 @@ BatteryStatus getBatteryStatus() {
     return {percentage, batteryVoltage};
 }
 
+// Screen timeout stuff
+void heltec_power_off() {
+    Serial.println("Powering off..."); // Never appears as goes into bootloader mode on V3
+    esp_deep_sleep_start();  // Put ESP32 into deep sleep
+}
+
+void toggleScreen() {
+    if (isScreenOn) {
+        turnScreenOff();
+    } else {
+        turnScreenOn();
+    }
+}
+
+void turnScreenOn() {
+    isScreenOn = true;
+    display.ssd1306_command(SSD1306_DISPLAYON);  // Wake the display from sleep mode
+    lastActivityTime = millis();  // Reset activity timer
+    Serial.println("Screen turned on");
+}
+
+void turnScreenOff() {
+    isScreenOn = false;
+    display.ssd1306_command(SSD1306_DISPLAYOFF);  // Put the display in sleep mode
+    Serial.println("Screen turned off to save battery");
+}
 
 #endif // defined(WYMAN_LORAV2)

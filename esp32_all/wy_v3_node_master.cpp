@@ -104,7 +104,6 @@ void wy_v3_node_master_loop() {
   // Screen timeout stuff
   static unsigned long buttonPressTime = 0;  // Tracks button press duration
   bool buttonState = digitalRead(PRG_BTN);
-
   // Long press detection (power off)
   if (buttonState == LOW) {
       if (buttonPressTime == 0) {
@@ -118,7 +117,6 @@ void wy_v3_node_master_loop() {
       }
       buttonPressTime = 0;  // Reset button press time
   }
-
   // Screen timeout logic
   if (isScreenOn && millis() - lastActivityTime > SCREEN_TIMEOUT) {
       turnScreenOff();
@@ -346,7 +344,7 @@ BatteryStatus getBatteryStatus() {
 
 // Screen timeout stuff
 void heltec_power_off() {
-    Serial.println("Powering off...");
+    Serial.println("Powering off..."); // Never appears as goes into bootloader mode on V3
     esp_deep_sleep_start();  // Put ESP32 into deep sleep
 }
 
