@@ -16,9 +16,13 @@
   //#define WY_NODE_02
 
   //// LORA DEBUG OPTIONS (COMMENT OUT AS NEEDED)
-  //#define LORA_DEBUG
+  #define LORA_DEBUG
   //#define BATTERY_DEBUG
-  #define ESPNOW_DEBUG
+  //#define ESPNOW_DEBUG
+
+  //// ACTIVE OPTIONS
+  //#define ESPNOW_ACTIVE 
+  #define LORA_ACTIVE 
 
   #include "../master/globals.h"
 

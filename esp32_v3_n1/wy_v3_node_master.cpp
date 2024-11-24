@@ -10,28 +10,11 @@
 #include <WiFi.h>
 #include <esp_now.h>
 // LORA STUFF
-// Pause between transmited packets in seconds.
-// Set to zero to only transmit a packet when pressing the user button
-// Will not exceed 1% duty cycle, even if you set a lower value.
-#define PAUSE               10           // Pause in seconds between transmits
-// Frequency in MHz. Keep the decimal point to designate float.
-// Check your own rules and regulations to see what is legal where you are.
-//#define FREQUENCY           866.3       // for Europe
-// #define FREQUENCY           905.2       // for US
-#define FREQUENCY           433.0       // for LoraV3 SX1278 - 915 for the SX1276 but thats only at ESP32 NOT S3
-// LoRa bandwidth. Keep the decimal point to designate float.
-// Allowed values are 7.8, 10.4, 15.6, 20.8, 31.25, 41.7, 62.5, 125.0, 250.0 and 500.0 kHz.
-#define BANDWIDTH           125.0
-// Number from 5 to 12. Higher means slower but higher "processor gain",
-// meaning (in nutshell) longer range and more robust against interference. 
-#define SPREADING_FACTOR    12
-// Transmit power in dBm. 0 dBm = 1 mW, enough for tabletop-testing. This value can be
-// set anywhere between -9 dBm (0.125 mW) to 22 dBm (158 mW). Note that the maximum ERP
-// (which is what your antenna maximally radiates) on the EU ISM band is 25 mW, and that
-// transmissting without an antenna can damage your hardware.
-// Europe (EU): 14 dBm (25 mW)
-// US: Up to 20-30 dBm, depending on specific frequency bands.
-#define TRANSMIT_POWER      20
+#define PAUSE               10        // Pause in seconds between transmits
+#define FREQUENCY           433.0     // Fine for 
+#define BANDWIDTH           250.0     // Fine, lower is longer range more battery lower data rates 7.8, 10.4, 15.6, 20.8, 31.25, 41.7, 62.5, 125.0, 250.0 and 500.0 kHz
+#define SPREADING_FACTOR    12        // 5-12, 12 longest range, lowest data rate, highest battery 9/10 recommended
+#define TRANSMIT_POWER      20        // 20dbm max longest range more battery max range 17/14 recommended +2, +5, +7, +10, +13, +14, +17, +20 dBm. 
 
 // OLED Stuff
 #define MAX_LINES 6      // Maximum number of lines visible on the display
@@ -62,30 +45,34 @@ static bool dataReceivedFlag = false;
 void wy_v3_node_master_setup() {
     heltec_setup();
 
-    // ESP-NOW Stuff
-    // Initialize ESP-NOW
-    uint8_t broadcastAddress[] = BC_ESPN;
-    initEspNow(broadcastAddress);
+    #if defined(ESPNOW_ACTIVE)
+      // ESP-NOW Stuff
+      // Initialize ESP-NOW
+      uint8_t broadcastAddress[] = BC_ESPN;
+      initEspNow(broadcastAddress);
+    #endif
 
     // Initialize OLED
     display.init();
     display.setFont(ArialMT_Plain_10);
     display.flipScreenVertically();
 
-    //LoRa Setup
-    // Begin radio looks like that needs done before radio configuration
-    #if defined(LORA_DEBUG)
-      RADIOLIB_OR_HALT(radio.begin());
-    #else
-      radio.begin();
+    #if defined(LORA_ACTIVE)
+      //LoRa Setup
+      // Begin radio looks like that needs done before radio configuration
+      #if defined(LORA_DEBUG)
+        RADIOLIB_OR_HALT(radio.begin());
+      #else
+        radio.begin();
+      #endif
+      // Set the callback function for received packets
+      radio.setDio1Action(rx);
+      // Set radio parameters
+      RADIOLIB_OR_HALT(radio.setFrequency(FREQUENCY));
+      RADIOLIB_OR_HALT(radio.setBandwidth(BANDWIDTH));
+      RADIOLIB_OR_HALT(radio.setSpreadingFactor(SPREADING_FACTOR));
+      RADIOLIB_OR_HALT(radio.setOutputPower(TRANSMIT_POWER));
     #endif
-    // Set the callback function for received packets
-    radio.setDio1Action(rx);
-    // Set radio parameters
-    RADIOLIB_OR_HALT(radio.setFrequency(FREQUENCY));
-    RADIOLIB_OR_HALT(radio.setBandwidth(BANDWIDTH));
-    RADIOLIB_OR_HALT(radio.setSpreadingFactor(SPREADING_FACTOR));
-    RADIOLIB_OR_HALT(radio.setOutputPower(TRANSMIT_POWER));
 
     // Welcome screen
     display.clear();
@@ -103,12 +90,13 @@ void wy_v3_node_master_setup() {
 
     // Pin modes
     pinMode(PRG_BTN, INPUT_PULLUP);  
-
-    // LoRa start receiving
-    #if defined(LORA_DEBUG)
-      RADIOLIB_OR_HALT(radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF));
-    #else
-      radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF);
+    #if defined(LORA_ACTIVE)
+      // LoRa start receiving
+      #if defined(LORA_DEBUG)
+        RADIOLIB_OR_HALT(radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF));
+      #else
+        radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF);
+      #endif
     #endif
 }
 
@@ -136,49 +124,56 @@ void wy_v3_node_master_loop() {
         turnScreenOff();
     }
 
-    
     if ( (millis() - loraLastSendTime) > (PAUSE * 1000) )  {
-      // Send ESP-NOW first
-      sendEspNowData(&espnData);
-
-      // Then send LoRa
-      radio.clearDio1Action();
-      String message = "Transmit test message LoRaV3";              
-      heltec_led(50); // 50% brightness is plenty for this LED
-      sendMessage(message);
-      heltec_led(0);
-
-      radio.setDio1Action(rx);
-      #if defined(LORA_DEBUG)
-        RADIOLIB_OR_HALT(radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF));
+      #if defined(ESPNOW_ACTIVE)
+        // Send ESP-NOW first
+        sendEspNowData(&espnData);
+        loraLastSendTime = millis();                  // Update the last send time
+      #elif defined(LORA_ACTIVE)
+        // Then send LoRa
+        radio.clearDio1Action(); // Stop receive action
+        String message = "Transmit test message LoRaV3";              
+        heltec_led(20); // 50% brightness is plenty for this LED
+        sendMessage(message);
+        heltec_led(0);
+        loraLastSendTime = millis();                  // Update the last send time
+        radio.setDio1Action(rx); // Start receive action
+        #if defined(LORA_DEBUG)
+          RADIOLIB_OR_HALT(radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF));
+        #else
+          radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF);
+        #endif
       #else
-        radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF);
+        debugMessage("LoRa&ESPN Inactive");
+        loraLastSendTime = millis();                  // Update the last send time
       #endif
-    }
 
-    // ESPN Receive
-    // Check for received data
-    if (isDataReceived()) {
-        SensorData received = getReceivedData();
-        Serial.println("Received Data:");
-        Serial.print("GPS Latitude: "); Serial.println(received.gps_latitude);
-        Serial.print("GPS Longitude: "); Serial.println(received.gps_longitude);
-        Serial.print("Altitude: "); Serial.println(received.altitude);
-        Serial.print("Pressure: "); Serial.println(received.pressure);
     }
-
-    // LoRa Receive
-    if (rxFlag) {
-      rxFlag = false;
-      radio.readData(rxdata);
-      onReceive(rxdata);
-      if (_radiolib_status == RADIOLIB_ERR_NONE) {
-        both.printf("RX [%s]\n", rxdata.c_str());
-        both.printf("  RSSI: %.2f dBm\n", radio.getRSSI());
-        both.printf("  SNR: %.2f dB\n", radio.getSNR());
+    #if defined(ESPNOW_ACTIVE)
+      // ESPN Receive
+      // Check for received data
+      if (isDataReceived()) {
+          SensorData received = getReceivedData();
+          Serial.println("Received Data:");
+          Serial.print("GPS Latitude: "); Serial.println(received.gps_latitude);
+          Serial.print("GPS Longitude: "); Serial.println(received.gps_longitude);
+          Serial.print("Altitude: "); Serial.println(received.altitude);
+          Serial.print("Pressure: "); Serial.println(received.pressure);
       }
-      RADIOLIB_OR_HALT(radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF));
-    }
+    #elif defined(LORA_ACTIVE)
+      // LoRa Receive
+      if (rxFlag) {
+        rxFlag = false;
+        radio.readData(rxdata);
+        onReceive(rxdata);
+        if (_radiolib_status == RADIOLIB_ERR_NONE) {
+          both.printf("RX [%s]\n", rxdata.c_str());
+          both.printf("  RSSI: %.2f dBm\n", radio.getRSSI());
+          both.printf("  SNR: %.2f dB\n", radio.getSNR());
+        }
+        RADIOLIB_OR_HALT(radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF));
+      }
+    #endif
 }
 
 // Can't do Serial or display things here, takes too much time for the interrupt
@@ -211,7 +206,6 @@ void sendMessage(String outgoing) {
     tx_time = millis();
     int16_t status = radio.transmit(payload, len + 7); // Transmit header + battery data + payload
     tx_time = millis() - tx_time;
-    loraLastSendTime = millis();                  // Update the last send time
 
     // Debug output
     if (_radiolib_status == RADIOLIB_ERR_NONE) {
