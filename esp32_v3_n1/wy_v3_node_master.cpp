@@ -21,17 +21,17 @@
 #define FREQUENCY           433.0       // for LoraV3 SX1278 - 915 for the SX1276 but thats only at ESP32 NOT S3
 // LoRa bandwidth. Keep the decimal point to designate float.
 // Allowed values are 7.8, 10.4, 15.6, 20.8, 31.25, 41.7, 62.5, 125.0, 250.0 and 500.0 kHz.
-#define BANDWIDTH           250.0
+#define BANDWIDTH           125.0
 // Number from 5 to 12. Higher means slower but higher "processor gain",
 // meaning (in nutshell) longer range and more robust against interference. 
-#define SPREADING_FACTOR    9
+#define SPREADING_FACTOR    12
 // Transmit power in dBm. 0 dBm = 1 mW, enough for tabletop-testing. This value can be
 // set anywhere between -9 dBm (0.125 mW) to 22 dBm (158 mW). Note that the maximum ERP
 // (which is what your antenna maximally radiates) on the EU ISM band is 25 mW, and that
 // transmissting without an antenna can damage your hardware.
 // Europe (EU): 14 dBm (25 mW)
 // US: Up to 20-30 dBm, depending on specific frequency bands.
-#define TRANSMIT_POWER      0
+#define TRANSMIT_POWER      20
 
 // OLED Stuff
 #define MAX_LINES 6      // Maximum number of lines visible on the display
@@ -170,7 +170,7 @@ void wy_v3_node_master_loop() {
     // LoRa Receive
     if (rxFlag) {
       rxFlag = false;
-      //radio.readData(rxdata);
+      radio.readData(rxdata);
       onReceive(rxdata);
       if (_radiolib_status == RADIOLIB_ERR_NONE) {
         both.printf("RX [%s]\n", rxdata.c_str());
