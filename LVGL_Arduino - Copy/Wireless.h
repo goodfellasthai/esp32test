@@ -6,8 +6,6 @@
 extern bool WIFI_Connection;
 extern uint8_t WIFI_NUM;
 extern uint8_t BLE_NUM;
-extern uint8_t CH_NUM;
-extern uint8_t HS_NUM;
 extern bool Scan_finish;
 
 int wifi_scan_number();

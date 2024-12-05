@@ -4,8 +4,6 @@
 bool WIFI_Connection = 0;
 uint8_t WIFI_NUM = 0;
 uint8_t BLE_NUM = 0;
-uint8_t CH_NUM = 0;
-uint8_t HS_NUM = 0;
 bool Scan_finish = 0;
 int wifi_scan_number()
 {

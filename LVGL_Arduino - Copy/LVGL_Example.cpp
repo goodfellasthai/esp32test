@@ -143,9 +143,9 @@ static void Onboard_create(lv_obj_t * parent)
   lv_obj_t * panel1 = lv_obj_create(parent);
   lv_obj_set_height(panel1, LV_SIZE_CONTENT);
 
-  //lv_obj_t * panel1_title = lv_label_create(panel1);
-  //lv_label_set_text(panel1_title, "Onboard parameter");
-  //lv_obj_add_style(panel1_title, &style_title, 0);
+  lv_obj_t * panel1_title = lv_label_create(panel1);
+  lv_label_set_text(panel1_title, "Onboard parameter");
+  lv_obj_add_style(panel1_title, &style_title, 0);
 
   lv_obj_t * SD_label = lv_label_create(panel1);
   lv_label_set_text(SD_label, "SD Card");
@@ -197,8 +197,8 @@ static void Onboard_create(lv_obj_t * parent)
 
   static lv_coord_t grid_2_col_dsc[] = {LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
   static lv_coord_t grid_2_row_dsc[] = {
-//    LV_GRID_CONTENT,  /*Title*/
-//    5,                /*Separator*/
+    LV_GRID_CONTENT,  /*Title*/
+    5,                /*Separator*/
     LV_GRID_CONTENT,  /*Box title*/
     40,               /*Box*/
     LV_GRID_CONTENT,  /*Box title*/
@@ -219,13 +219,13 @@ static void Onboard_create(lv_obj_t * parent)
 
   lv_obj_set_grid_cell(panel1, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_START, 0, 1);
   lv_obj_set_grid_dsc_array(panel1, grid_2_col_dsc, grid_2_row_dsc);
-  //lv_obj_set_grid_cell(panel1_title, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-  lv_obj_set_grid_cell(SD_label, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 0, 1);
-  lv_obj_set_grid_cell(SD_Size, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
-  lv_obj_set_grid_cell(Flash_label, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 2, 1);
-  lv_obj_set_grid_cell(FlashSize, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 3, 1);
-  lv_obj_set_grid_cell(Wireless_label, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 4, 1);
-  lv_obj_set_grid_cell(Wireless_Scan, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 5, 1);
+  lv_obj_set_grid_cell(panel1_title, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+  lv_obj_set_grid_cell(SD_label, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 2, 1);
+  lv_obj_set_grid_cell(SD_Size, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 3, 1);
+  lv_obj_set_grid_cell(Flash_label, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 4, 1);
+  lv_obj_set_grid_cell(FlashSize, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 5, 1);
+  lv_obj_set_grid_cell(Wireless_label, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 6, 1);
+  lv_obj_set_grid_cell(Wireless_Scan, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 7, 1);
 
   // 器件布局 END
   
@@ -241,8 +241,7 @@ void IRAM_ATTR example1_increase_lvgl_tick(lv_timer_t * t)
   snprintf(buf, sizeof(buf), "%d MB\r\n", Flash_Size);
   lv_textarea_set_placeholder_text(FlashSize, buf);
   if(Scan_finish)
-    snprintf(buf, sizeof(buf), "W:%d B:%d C:%d H:%d\r\n",WIFI_NUM,BLE_NUM,CH_NUM,HS_NUM);
-    ////snprintf(buf, sizeof(buf), "W: %d  B: %d    OK.\r\n",WIFI_NUM,BLE_NUM);
+    snprintf(buf, sizeof(buf), "W: %d  B: %d    OK.\r\n",WIFI_NUM,BLE_NUM);
     // snprintf(buf, sizeof(buf), "WIFI: %d     ..OK.\r\n",WIFI_NUM);
   else
     snprintf(buf, sizeof(buf), "W: %d  B: %d\r\n",WIFI_NUM,BLE_NUM);
