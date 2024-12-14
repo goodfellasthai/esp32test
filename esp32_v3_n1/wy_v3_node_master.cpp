@@ -61,6 +61,7 @@ void wy_v3_node_master_setup() {
       //LoRa Setup
       // Begin radio looks like that needs done before radio configuration
       #if defined(LORA_DEBUG)
+        Serial.print("LORA ");
         RADIOLIB_OR_HALT(radio.begin());
       #else
         radio.begin();
@@ -93,6 +94,7 @@ void wy_v3_node_master_setup() {
     #if defined(LORA_ACTIVE)
       // LoRa start receiving
       #if defined(LORA_DEBUG)
+        Serial.print("LORA ");
         RADIOLIB_OR_HALT(radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF));
       #else
         radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF);
@@ -129,7 +131,8 @@ void wy_v3_node_master_loop() {
         // Send ESP-NOW first
         sendEspNowData(&espnData);
         loraLastSendTime = millis();                  // Update the last send time
-      #elif defined(LORA_ACTIVE)
+      #endif
+      #if defined(LORA_ACTIVE)
         // Then send LoRa
         radio.clearDio1Action(); // Stop receive action
         String message = "Transmit test message LoRaV3";              
@@ -139,14 +142,17 @@ void wy_v3_node_master_loop() {
         loraLastSendTime = millis();                  // Update the last send time
         radio.setDio1Action(rx); // Start receive action
         #if defined(LORA_DEBUG)
+          Serial.print("LORA ");
           RADIOLIB_OR_HALT(radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF));
         #else
           radio.startReceive(RADIOLIB_SX126X_RX_TIMEOUT_INF);
         #endif
-      #else
-        debugMessage("LoRa&ESPN Inactive");
-        loraLastSendTime = millis();                  // Update the last send time
       #endif
+      #if !defined(LORA_ACTIVE) && !defined(ESPNOW_ACTIVE)
+          debugMessage("LoRa or ESPNOW Inactive");
+          loraLastSendTime = millis(); // Update the last send time
+      #endif
+
 
     }
     #if defined(ESPNOW_ACTIVE)
@@ -160,7 +166,8 @@ void wy_v3_node_master_loop() {
           Serial.print("Altitude: "); Serial.println(received.altitude);
           Serial.print("Pressure: "); Serial.println(received.pressure);
       }
-    #elif defined(LORA_ACTIVE)
+    #endif
+    #if defined(LORA_ACTIVE)
       // LoRa Receive
       if (rxFlag) {
         rxFlag = false;
@@ -210,13 +217,13 @@ void sendMessage(String outgoing) {
     // Debug output
     if (_radiolib_status == RADIOLIB_ERR_NONE) {
         #if defined(LORA_DEBUG)
-          Serial.println("Payload Debug:");
-          Serial.print("Hex: ");
+          Serial.println("LORA Payload Debug:");
+          Serial.print("LORA Hex: ");
           for (size_t i = 0; i < len + 7; i++) {
               Serial.printf("%02X ", payload[i]); // Print as hex
           }
           Serial.println();
-          Serial.print("ASCII: ");
+          Serial.print("LORA ASCII: ");
           for (size_t i = 0; i < len + 7; i++) {
               if (payload[i] >= 32 && payload[i] <= 126) {
                   Serial.print((char)payload[i]); // Printable ASCII
@@ -226,7 +233,7 @@ void sendMessage(String outgoing) {
           }
           Serial.printf(" [Transmitted Battery Info: %d%%, Voltage: %.2fV]\n", batteryLevel, voltage / 100.0); // Display battery data
         #endif
-        monitormsg = "TX[" + String(msgCount) + "]:OK:" + String((int)tx_time) + "ms";
+        monitormsg = "LORA TX[" + String(msgCount) + "]:OK:" + String((int)tx_time) + "ms";
     } else {
         Serial.printf("Fail (%d)\n", _radiolib_status);
         monitormsg = "TX [" + String(msgCount) + "] Fail (" + String(_radiolib_status) + ")";
@@ -236,13 +243,13 @@ void sendMessage(String outgoing) {
 
 void onReceive(String rxdata) {
     if (rxdata.length() == 0) {
-        Serial.println("Error: No data received.");
+        Serial.println("LORA Error: No data received.");
         return;
     }
 
     size_t len = rxdata.length();
     if (len < 7) { // Ensure the message has at least a header + battery data
-        Serial.println("Error: Insufficient data length.");
+        Serial.println("LORA Error: Insufficient data length.");
         return;
     }
 
@@ -260,7 +267,7 @@ void onReceive(String rxdata) {
 
     // Verify the payload length
     if (len - 7 != messageLen) {
-        Serial.println("Error: Message length mismatch!");
+        Serial.println("LORA Error: Message length mismatch!");
         return;
     }
 
@@ -272,7 +279,7 @@ void onReceive(String rxdata) {
 
     // Check if the message is for this device
     if (recipient != LOCAL_ADDRESS && recipient != BC_LORA) {
-        Serial.println("Message not for me.");
+        Serial.println("LORA Message not for me.");
         return;
     }
 
@@ -392,7 +399,7 @@ void turnScreenOff() {
 // ESP-NOW stuff
 // Callback when data is sent
 void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-    Serial.print("Last Packet Send Status: ");
+    Serial.print("ESPNOW Last Packet Send Status: ");
     Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Success" : "Failed");
 }
 // Callback when data is received
@@ -433,7 +440,7 @@ void onDataRecv(const esp_now_recv_info *info, const uint8_t *data, int dataLen)
 void initEspNow(const uint8_t *peerAddress) {
     WiFi.mode(WIFI_STA); // Ensure Wi-Fi is in Station mode
     if (esp_now_init() != ESP_OK) {
-        Serial.println("Error initializing ESP-NOW");
+        Serial.println("ESPNOW Error initializing ESP-NOW");
         return;
     }
 
@@ -442,7 +449,7 @@ void initEspNow(const uint8_t *peerAddress) {
     esp_now_register_recv_cb(onDataRecv);
 
     // Add peer for broadcasting
-    Serial.print("Adding peer with address: ");
+    Serial.print("ESPNOW Adding peer with address: ");
     for (int i = 0; i < 6; i++) {
         Serial.printf("%02X", peerAddress[i]);
         if (i < 5) Serial.print(":");
@@ -456,9 +463,9 @@ void initEspNow(const uint8_t *peerAddress) {
     peerInfo.encrypt = false; // Disable encryption
 
     if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-        Serial.println("Failed to add peer");
+        Serial.println("ESPNOW Failed to add peer");
     } else {
-        Serial.println("Peer added successfully");
+        Serial.println("ESPNOW Peer added successfully");
     }
 }
 // Send data using ESP-NOW
@@ -466,9 +473,9 @@ void sendEspNowData(SensorData *data) {
     uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)data, sizeof(SensorData));
     if (result == ESP_OK) {
-        Serial.println("Data sent successfully");
+        Serial.println("ESPNOW Data sent successfully");
     } else {
-        Serial.println("Error sending data");
+        Serial.println("ESPNOW Error sending data");
     }
 }
 
